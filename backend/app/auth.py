@@ -1,3 +1,6 @@
+import base64
+import json
+
 from fastapi import Depends, Header, HTTPException, status
 
 from app.firebase import init_firebase_app
@@ -10,6 +13,18 @@ def _parse_dev_token(token: str) -> FirebaseUser:
     email = raw if "@" in raw else f"{raw}@example.com"
     name = email.split("@", maxsplit=1)[0].replace(".", " ").replace("_", " ").title()
     return FirebaseUser(firebase_uid=f"dev:{email}", email=email, name=name)
+
+
+def _token_payload_hint(token: str) -> str:
+    try:
+        parts = token.split(".")
+        if len(parts) < 2:
+            return "token is not a JWT"
+        payload = parts[1] + "=" * (-len(parts[1]) % 4)
+        decoded = json.loads(base64.urlsafe_b64decode(payload.encode("utf-8")))
+        return f"aud={decoded.get('aud')!r}, iss={decoded.get('iss')!r}, expected_project={settings.firebase_project_id!r}"
+    except Exception:
+        return f"could not decode token payload, expected_project={settings.firebase_project_id!r}"
 
 
 def verify_firebase_token(authorization: str | None = Header(default=None)) -> FirebaseUser:
@@ -38,7 +53,7 @@ def verify_firebase_token(authorization: str | None = Header(default=None)) -> F
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Firebase ID token",
+            detail=f"Invalid Firebase ID token ({_token_payload_hint(token)}): {exc}",
         ) from exc
 
     email = decoded.get("email")

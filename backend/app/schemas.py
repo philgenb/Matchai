@@ -14,6 +14,7 @@ class UserPreferences(BaseModel):
     home_city: str | None = None
     location_label: str | None = None
     calendar_connected: bool = False
+    onboarding_completed: bool = False
 
 
 class GroupCreate(BaseModel):

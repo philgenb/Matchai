@@ -14,6 +14,14 @@ import matchaiLogo from '../../components/ui/matchai_logo.svg'
 import appleIcon from '../../assets/icons/apple-icon.svg'
 import facebookIcon from '../../assets/icons/facebook-icon.svg'
 import googleIcon from '../../assets/icons/google-icon.svg'
+import { api, setDevEmail } from '../../lib/api'
+import {
+  firebaseConfigured,
+  persistFirebaseToken,
+  signInWithEmail,
+  signInWithGoogle,
+  signUpWithEmail,
+} from '../../lib/firebase'
 import friendsPictureTwo from '/friends_picture_2.png'
 
 type FormMode = 'signup' | 'signin'
@@ -145,6 +153,7 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success'>('idle')
+  const [authError, setAuthError] = useState('')
 
   const [form, setForm] = useState<FormState>({
     name: '',
@@ -175,17 +184,60 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
 
   const handleFieldChange = (name: FieldName, value: string) => {
     setSubmitStatus('idle')
+    setAuthError('')
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!formIsValid) return
+    setDevEmail(form.email)
     setSubmitStatus('submitting')
-    window.setTimeout(() => {
+
+    const authenticate = async () => {
+      if (firebaseConfigured) {
+        let credentials
+        if (mode === 'signup') {
+          credentials = await signUpWithEmail({
+            name: form.name,
+            email: form.email,
+            password: form.password,
+          })
+        } else {
+          credentials = await signInWithEmail(form.email, form.password)
+        }
+        await persistFirebaseToken(credentials?.user)
+      }
+      await api.me()
       setSubmitStatus('success')
-      navigate('/onboarding')
-    }, 700)
+      navigate('/app')
+    }
+
+    authenticate().catch((error) => {
+      setAuthError(error instanceof Error ? error.message : 'Sign in failed.')
+      setSubmitStatus('idle')
+    })
+  }
+
+  const handleSocialAuth = async (provider: 'apple' | 'google' | 'facebook') => {
+    setDevEmail(form.email || 'johannes@gmail.com')
+    setAuthError('')
+
+    try {
+      if (firebaseConfigured) {
+        if (provider !== 'google') {
+          setAuthError('Only Google sign-in is configured right now.')
+          return
+        }
+
+        const credentials = await signInWithGoogle()
+        await persistFirebaseToken(credentials?.user)
+      }
+      await api.me()
+      navigate('/app')
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Sign in failed.')
+    }
   }
 
   return (
@@ -307,9 +359,9 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
               </p>
 
               <div className="flex items-center justify-between gap-[18px]">
-                <SocialIconButton icon={appleIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Apple`} onClick={() => navigate('/onboarding')} />
-                <SocialIconButton icon={googleIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Google`} onClick={() => navigate('/onboarding')} />
-                <SocialIconButton icon={facebookIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Facebook`} onClick={() => navigate('/onboarding')} />
+                <SocialIconButton icon={appleIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Apple`} onClick={() => handleSocialAuth('apple')} />
+                <SocialIconButton icon={googleIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Google`} onClick={() => handleSocialAuth('google')} />
+                <SocialIconButton icon={facebookIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Facebook`} onClick={() => handleSocialAuth('facebook')} />
               </div>
 
               <button
@@ -337,6 +389,11 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
                   {mode === 'signup'
                     ? 'Fill all fields, use a valid email, and make sure passwords match.'
                     : 'Enter a valid email and password to continue.'}
+                </p>
+              )}
+              {authError && (
+                <p className="text-center font-['Outfit',sans-serif] text-[13px] text-[#9f56f3]">
+                  {authError}
                 </p>
               )}
             </form>

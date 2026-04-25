@@ -1,6 +1,7 @@
 from typing import Any
 
 from fastapi import HTTPException
+from google.api_core.exceptions import FailedPrecondition
 from google.cloud.firestore_v1 import FieldFilter
 
 from app.firebase import firestore_client
@@ -61,6 +62,7 @@ def user_preferences(user_id: str) -> dict[str, Any]:
             "home_city": None,
             "location_label": None,
             "calendar_connected": False,
+            "onboarding_completed": False,
         }
 
     data = snapshot.to_dict() or {}
@@ -69,6 +71,7 @@ def user_preferences(user_id: str) -> dict[str, Any]:
         "home_city": data.get("home_city"),
         "location_label": data.get("location_label"),
         "calendar_connected": bool(data.get("calendar_connected", False)),
+        "onboarding_completed": bool(data.get("onboarding_completed", False)),
     }
 
 
@@ -224,15 +227,21 @@ def group_id_for_invite(invite_code: str) -> str | None:
 
 
 def group_ids_for_user(user_id: str) -> list[str]:
-    snapshots = (
-        firestore_client()
-        .collection_group("members")
-        .where(filter=FieldFilter("user_id", "==", user_id))
-        .stream()
-    )
+    db = firestore_client()
     group_ids: list[str] = []
-    for snapshot in snapshots:
-        group_doc = snapshot.reference.parent.parent
-        if group_doc:
-            group_ids.append(group_doc.id)
+
+    try:
+        snapshots = db.collection_group("members").where(filter=FieldFilter("user_id", "==", user_id)).stream()
+        for snapshot in snapshots:
+            group_doc = snapshot.reference.parent.parent
+            if group_doc:
+                group_ids.append(group_doc.id)
+        return group_ids
+    except FailedPrecondition:
+        pass
+
+    for snapshot in db.collection("groups").stream():
+        if snapshot.reference.collection("members").document(user_id).get().exists:
+            group_ids.append(snapshot.id)
+
     return group_ids

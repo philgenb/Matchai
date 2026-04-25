@@ -1,10 +1,13 @@
 from functools import lru_cache
+from pathlib import Path
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+BACKEND_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=BACKEND_ENV_FILE, extra="ignore")
 
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
     allow_dev_auth: bool = True

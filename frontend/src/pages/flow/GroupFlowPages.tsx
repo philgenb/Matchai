@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowUpRight,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
+  LogOut,
   Globe2,
   Image as ImageIcon,
   LoaderCircle,
@@ -16,13 +18,23 @@ import googleCalendarIcon from '../../assets/icons/google-calendar-icon.svg'
 import googleMapsIcon from '../../assets/icons/google-maps-icon.svg'
 import hannahAvatar from '../../components/ui/hannah_profile_icon.png'
 import julianAvatar from '../../components/ui/julian_profile_icon.png'
+import { api, signOutFrontend } from '../../lib/api'
 
 const groupId = 'aral-chiller'
 const chips = ['Café', 'Bar', 'Restaurant', 'Brunch', 'Walk', 'Park', 'Club', 'Bowling']
 const cafeImage =
   'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=780&q=80'
+const LAST_GROUP_ID_KEY = 'matchai:lastGroupId'
+const LAST_PROPOSAL_KEY = 'matchai:lastProposal'
 
-function FlowPageShell({ children, showHome = false }: { children: React.ReactNode; showHome?: boolean }) {
+function FlowPageShell({ children, showHome = false }: { children: ReactNode; showHome?: boolean }) {
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await signOutFrontend()
+    navigate('/', { replace: true })
+  }
+
   return (
     <main className="relative mx-auto min-h-screen max-w-[1728px] overflow-hidden bg-[#f7f7f7] px-[88px] py-[84px]">
       <div className="pointer-events-none absolute -left-[1060px] top-[438px] h-[728px] w-[1385px] rounded-full bg-[radial-gradient(circle,_rgba(180,115,255,0.16)_0%,_rgba(180,115,255,0)_68%)]" />
@@ -31,16 +43,27 @@ function FlowPageShell({ children, showHome = false }: { children: React.ReactNo
         <Link to="/" aria-label="MatchAI home">
           <img src={matchaiLogo} alt="" aria-hidden width={69} height={69} className="h-[69px] w-[69px]" />
         </Link>
-        {showHome && (
-          <Link
-            to="/"
-            className="flex h-[70px] w-[182px] items-center justify-center rounded-[23px] bg-white shadow-[0_0_32px_rgba(0,0,0,0.08)]"
+        <div className="flex items-center gap-3">
+          {showHome && (
+            <Link
+              to="/"
+              className="flex h-[70px] w-[182px] items-center justify-center rounded-[23px] bg-white shadow-[0_0_32px_rgba(0,0,0,0.08)]"
+            >
+              <span className="flex h-[43px] w-[156px] items-center justify-center rounded-[23px] bg-[#7ca8ff] font-['Outfit',sans-serif] text-[20px] font-bold text-white">
+                Home
+              </span>
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex h-[70px] w-[70px] items-center justify-center rounded-[23px] bg-white text-[#303030] shadow-[0_0_32px_rgba(0,0,0,0.08)] transition hover:text-[var(--color-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+            aria-label="Log out"
+            title="Log out"
           >
-            <span className="flex h-[43px] w-[156px] items-center justify-center rounded-[23px] bg-[#7ca8ff] font-['Outfit',sans-serif] text-[20px] font-bold text-white">
-              Home
-            </span>
-          </Link>
-        )}
+            <LogOut size={25} strokeWidth={2.4} />
+          </button>
+        </div>
       </header>
       {children}
     </main>
@@ -102,6 +125,8 @@ function Chip({
 }
 
 function LocationInput({ className = '' }: { className?: string }) {
+  const [city, setCity] = useState('Munich')
+
   return (
     <label className={`block ${className}`}>
       <span className="font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Home City / Location</span>
@@ -109,7 +134,8 @@ function LocationInput({ className = '' }: { className?: string }) {
         <MapPin size={25} className="text-[#3d3d3d]" />
         <span aria-hidden className="mx-6 h-[37px] w-px bg-[#dddddd]" />
         <input
-          defaultValue="Munich"
+          value={city}
+          onChange={(event) => setCity(event.target.value)}
           className="w-full bg-transparent font-['Outfit',sans-serif] text-[22px] font-medium text-[#3e3e3e] outline-none"
         />
       </span>
@@ -121,9 +147,71 @@ export function OnboardingPage() {
   const navigate = useNavigate()
   const [liked, setLiked] = useState(['Café', 'Bar'])
   const [disliked, setDisliked] = useState(['Café', 'Bar'])
+  const [homeCity, setHomeCity] = useState('Munich')
+  const [calendarConnected, setCalendarConnected] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [backendReady, setBackendReady] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [feedback, setFeedback] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([api.me(), api.getPreferences(), api.getCalendarStatus()])
+      .then(([, preferences, calendar]) => {
+        if (cancelled) return
+        setLiked((preferences.interests || []).map((interest: string) => (interest === 'Cafe' ? 'Café' : interest)))
+        setHomeCity(preferences.home_city || preferences.location_label || 'Munich')
+        setCalendarConnected(Boolean(calendar.connected || preferences.calendar_connected))
+        setBackendReady(true)
+        setFeedback('')
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setBackendReady(false)
+        setFeedback(error instanceof Error ? error.message : 'Could not load your profile from the backend.')
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const toggle = (list: string[], setter: (items: string[]) => void, chip: string) => {
     setter(list.includes(chip) ? list.filter((item) => item !== chip) : [...list, chip])
+  }
+
+  const connectCalendar = async () => {
+    if (!backendReady) return
+    setFeedback('Opening Google Calendar connection...')
+    try {
+      const response = await api.connectCalendar()
+      window.location.href = response.auth_url
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Calendar connection is not ready yet.')
+    }
+  }
+
+  const savePreferences = async () => {
+    if (!backendReady || isLoading) return
+    setIsSaving(true)
+    setFeedback('')
+    try {
+      await api.savePreferences({
+        interests: liked.map((interest) => (interest === 'Café' ? 'Cafe' : interest)),
+        home_city: homeCity,
+        location_label: homeCity,
+        calendar_connected: calendarConnected,
+        onboarding_completed: true,
+      })
+      setIsSaving(false)
+      navigate('/app')
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Could not save preferences. Please try again.')
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -146,12 +234,28 @@ export function OnboardingPage() {
         <div className="mt-[44px] grid grid-cols-[247px_378px] gap-[196px]">
           <div>
             <p className="mb-5 font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Link Google Calendar</p>
-            <button className="flex h-[61px] w-[247px] items-center gap-6 rounded-[13px] bg-[#ededed] px-8 font-['Outfit',sans-serif] text-[17px] font-bold text-[#2f2f2f]">
+            <button
+              type="button"
+              onClick={connectCalendar}
+              disabled={!backendReady || isLoading}
+              className={`flex h-[61px] w-[247px] items-center gap-6 rounded-[13px] px-8 font-['Outfit',sans-serif] text-[17px] font-bold text-[#2f2f2f] disabled:cursor-not-allowed disabled:opacity-50 ${calendarConnected ? 'bg-[#e8d1ff]' : 'bg-[#ededed]'}`}
+            >
               <img src={googleCalendarIcon} alt="" className="h-[28px] w-[28px]" />
-              Google Calendar
+              {calendarConnected ? 'Connected' : 'Google Calendar'}
             </button>
           </div>
-          <LocationInput />
+          <label className="block">
+            <span className="font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Home City / Location</span>
+            <span className="mt-5 flex h-[61px] w-full items-center rounded-[13px] border border-[rgba(0,0,0,0.1)] bg-white px-6">
+              <MapPin size={25} className="text-[#3d3d3d]" />
+              <span aria-hidden className="mx-6 h-[37px] w-px bg-[#dddddd]" />
+              <input
+                value={homeCity}
+                onChange={(event) => setHomeCity(event.target.value)}
+                className="w-full bg-transparent font-['Outfit',sans-serif] text-[22px] font-medium text-[#3e3e3e] outline-none"
+              />
+            </span>
+          </label>
         </div>
 
         <div className="mx-2 mt-[58px] h-[3px] bg-[#eeeeee]" />
@@ -181,12 +285,14 @@ export function OnboardingPage() {
             <span className="mb-4 mr-[218px] rounded-full bg-[#b473df] px-6 py-2 font-['Outfit',sans-serif] text-[15px] font-medium text-white">Hannah</span>
             <button
               type="button"
-              onClick={() => navigate('/groups/new')}
-              className="flex h-[59px] w-[237px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-9 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white"
+              disabled={isSaving || !backendReady || isLoading}
+              onClick={savePreferences}
+              className="flex h-[59px] w-[237px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-9 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:opacity-60"
             >
-              Create a group
+              {isLoading ? 'Loading...' : isSaving ? 'Saving...' : 'Create a group'}
               <IconButtonCircle />
             </button>
+            {feedback && <p className="mt-3 max-w-[280px] text-right font-['Outfit',sans-serif] text-[13px] font-bold text-[#979797]">{feedback}</p>}
           </div>
         </div>
       </section>
@@ -202,6 +308,26 @@ export function OnboardingPage() {
 
 export function CreateGroupPage() {
   const navigate = useNavigate()
+  const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState('')
+
+  const createGroup = async () => {
+    setIsCreating(true)
+    setError('')
+    try {
+      await api.me()
+      const group = await api.createGroup({
+        name: 'Aral-Chiller',
+        description: 'We check calendars, locations, and preferences to suggest the best meetup.',
+      })
+      window.localStorage.setItem(LAST_GROUP_ID_KEY, group.id)
+      navigate(`/groups/${group.id}/waiting`)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not create the group. Please try again.')
+    } finally {
+      setIsCreating(false)
+    }
+  }
 
   return (
     <FlowPageShell showHome>
@@ -215,12 +341,14 @@ export function CreateGroupPage() {
         </p>
         <button
           type="button"
-          onClick={() => navigate(`/groups/${groupId}/waiting`)}
-          className="mx-auto mt-[68px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white"
+          disabled={isCreating}
+          onClick={createGroup}
+          className="mx-auto mt-[68px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:opacity-60"
         >
-          Find a meeting ASAP
+          {isCreating ? 'Creating group...' : 'Find a meeting ASAP'}
           <IconButtonCircle />
         </button>
+        {error && <p className="mx-auto mt-4 max-w-[520px] font-['Outfit',sans-serif] text-[14px] font-bold text-[#979797]">{error}</p>}
 
         <section className="mt-[118px]">
           <h2 className="font-['Outfit',sans-serif] text-[21px] font-bold text-[#303030]">Members of Aral-Chiller</h2>
@@ -244,23 +372,54 @@ export function CreateGroupPage() {
 
 export function WaitingForGroupMatchPage() {
   const navigate = useNavigate()
+  const { groupId: routeGroupId } = useParams()
   const [progress, setProgress] = useState(0)
+  const [scheduleFinished, setScheduleFinished] = useState(false)
+  const [scheduleBlocked, setScheduleBlocked] = useState(false)
+  const [statusText, setStatusText] = useState('Starting backend match...')
+
+  useEffect(() => {
+    const activeGroupId = routeGroupId || window.localStorage.getItem(LAST_GROUP_ID_KEY) || groupId
+    let cancelled = false
+
+    api.scheduleGroup(activeGroupId)
+      .then((proposal) => {
+        if (cancelled) return
+        window.localStorage.setItem(LAST_PROPOSAL_KEY, JSON.stringify(proposal))
+        setStatusText('Proposal found.')
+        setScheduleFinished(true)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setStatusText(error instanceof Error ? error.message : 'Could not start matching.')
+        setScheduleBlocked(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [routeGroupId])
 
   useEffect(() => {
     const interval = window.setInterval(() => {
       setProgress((current) => {
-        if (current >= 100) {
+        if (scheduleBlocked) {
           window.clearInterval(interval)
-          window.setTimeout(() => navigate(`/groups/${groupId}/match`), 500)
+          return current
+        }
+
+        if (current >= 100 && scheduleFinished) {
+          window.clearInterval(interval)
+          window.setTimeout(() => navigate(`/groups/${routeGroupId || window.localStorage.getItem(LAST_GROUP_ID_KEY) || groupId}/match`), 500)
           return 100
         }
 
-        return current + 10
+        return Math.min(scheduleFinished ? 100 : 90, current + 10)
       })
     }, 320)
 
     return () => window.clearInterval(interval)
-  }, [navigate])
+  }, [navigate, routeGroupId, scheduleBlocked, scheduleFinished])
 
   return (
     <FlowPageShell showHome>
@@ -278,6 +437,7 @@ export function WaitingForGroupMatchPage() {
             <LoaderCircle className="animate-spin" size={22} />
           </span>
         </div>
+        <p className="mt-4 font-['Outfit',sans-serif] text-[14px] font-bold text-[#979797]">{statusText}</p>
 
         <section className="mt-[118px]">
           <h2 className="font-['Outfit',sans-serif] text-[21px] font-bold text-[#303030]">Members of Aral-Chiller</h2>
@@ -300,7 +460,79 @@ export function WaitingForGroupMatchPage() {
 }
 
 export function GroupMatchPage() {
+  const { groupId: routeGroupId } = useParams()
   const [confirmed, setConfirmed] = useState(false)
+  const [proposal, setProposal] = useState(null)
+  const [isLoadingProposal, setIsLoadingProposal] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [feedback, setFeedback] = useState('')
+
+  useEffect(() => {
+    const activeGroupId = routeGroupId || window.localStorage.getItem(LAST_GROUP_ID_KEY)
+    if (!activeGroupId) {
+      setLoadError('No group selected. Create a group before opening a match.')
+      setIsLoadingProposal(false)
+      return
+    }
+
+    api.getProposal(activeGroupId)
+      .then((latestProposal) => {
+        setProposal(latestProposal)
+        window.localStorage.setItem(LAST_PROPOSAL_KEY, JSON.stringify(latestProposal))
+        setLoadError('')
+      })
+      .catch((error) => {
+        setProposal(null)
+        setLoadError(error instanceof Error ? error.message : 'Could not load the proposal from the backend.')
+      })
+      .finally(() => {
+        setIsLoadingProposal(false)
+      })
+  }, [routeGroupId])
+
+  const countMeIn = async () => {
+    if (!proposal) return
+    setFeedback('Saving RSVP...')
+    try {
+      const updated = await api.rsvp(proposal.id, 'accept')
+      setProposal(updated)
+      window.localStorage.setItem(LAST_PROPOSAL_KEY, JSON.stringify(updated))
+      setConfirmed(true)
+      setFeedback('RSVP saved.')
+    } catch (error) {
+      setConfirmed(false)
+      setFeedback(error instanceof Error ? error.message : 'Could not save RSVP. Please try again.')
+    }
+  }
+
+  if (isLoadingProposal || loadError || !proposal) {
+    return (
+      <FlowPageShell showHome>
+        <section className="mx-auto mt-[220px] max-w-[820px] text-center">
+          <h1 className="font-['Outfit',sans-serif] text-[64px] font-bold tracking-[-0.04em] text-[#303030]">
+            {isLoadingProposal ? 'Loading match...' : 'Match unavailable'}
+          </h1>
+          <p className="mx-auto mt-8 max-w-[640px] font-['Geist',sans-serif] text-[24px] font-medium leading-[1.3] tracking-[-0.03em] text-[#979797]">
+            {isLoadingProposal ? 'Fetching the proposal from the backend.' : loadError}
+          </p>
+          {!isLoadingProposal && (
+            <Link
+              to="/groups/new"
+              className="mx-auto mt-12 flex h-[59px] w-[250px] items-center justify-center rounded-[29px] bg-[var(--color-primary)] font-['Outfit',sans-serif] text-[18px] font-bold text-white"
+            >
+              Back to group
+            </Link>
+          )}
+        </section>
+      </FlowPageShell>
+    )
+  }
+
+  const startsAt = new Date(proposal.starts_at)
+  const endsAt = new Date(proposal.ends_at)
+  const timeLabel = Number.isNaN(startsAt.getTime())
+    ? '17:00 - 19:30 Uhr'
+    : `${startsAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} - ${endsAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
 
   return (
     <FlowPageShell showHome>
@@ -308,16 +540,16 @@ export function GroupMatchPage() {
         <div className="pt-[45px]">
           <p className="font-['Outfit',sans-serif] text-[27px] font-bold tracking-[-0.04em] text-[#b5b5b5]">What about</p>
           <h1 className="mt-7 font-['Outfit',sans-serif] text-[70px] font-bold leading-[1] tracking-[-0.05em] text-[#303030]">
-            Location einfügen
+            {proposal.location_name}
           </h1>
           <p className="mt-[50px] max-w-[600px] font-['Geist',sans-serif] text-[21px] font-medium leading-[1.25] tracking-[-0.03em] text-[#979797]">
-            We check your calendars, look at your locations, and suggest meetups that match your preferences. You’ll get a WhatsApp from us, just sit back.
+            {proposal.summary}
           </p>
 
           <div className="mt-[72px] w-[500px] overflow-hidden rounded-[14px] border border-[#e3e3e3] bg-white font-['Outfit',sans-serif] text-[18px] font-bold text-[#303030]">
             <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-8">
               <span>Zeitraum</span>
-              <span className="text-right text-[#858585]">17:00 - 19:30 Uhr</span>
+              <span className="text-right text-[#858585]">{timeLabel}</span>
             </div>
             <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-8">
               <span>Preis</span>
@@ -329,14 +561,14 @@ export function GroupMatchPage() {
             </div>
             <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center px-8">
               <span>Vibe</span>
-              <span className="text-right text-[#858585]">hektisch, lebendig</span>
+              <span className="text-right text-[#858585]">{proposal.rationale || 'hektisch, lebendig'}</span>
             </div>
           </div>
 
           <div className="mt-[117px] flex items-center gap-6">
             <button
               type="button"
-              onClick={() => setConfirmed(true)}
+              onClick={countMeIn}
               className="flex h-[76px] w-[272px] items-center justify-between rounded-[38px] bg-[var(--color-primary)] pl-10 pr-[12px] font-['Outfit',sans-serif] text-[24px] font-bold text-white"
             >
               {confirmed ? 'Counted in' : 'Count me in'}
@@ -358,7 +590,7 @@ export function GroupMatchPage() {
 
         <aside className="pt-[115px]">
           <div className="relative h-[366px] w-[367px] overflow-hidden rounded-[13px]">
-            <img src={cafeImage} alt="Cafe interior" className="h-full w-full object-cover" />
+            <img src={proposal.image_url || cafeImage} alt={proposal.location_name} className="h-full w-full object-cover" />
             <div className="absolute left-[24px] top-[30px] flex h-[61px] w-[91px] items-center justify-center rounded-[31px] bg-white">
               <img src={googleMapsIcon} alt="" className="h-8 w-8" />
             </div>
@@ -371,15 +603,15 @@ export function GroupMatchPage() {
           <div className="mt-[60px] flex items-center gap-7">
             <span className="flex h-[60px] w-[284px] items-center justify-center gap-6 rounded-[30px] bg-[#eeeeee] font-['Outfit',sans-serif] text-[19px] font-bold text-[#747474]">
               <Phone size={22} className="text-[#303030]" />
-              +49 1234 567891
+              {proposal.address}
             </span>
-            <span className="flex h-[60px] w-[90px] items-center justify-center rounded-[30px] bg-[#eeeeee]">
+            <a href={proposal.source_url || '#'} className="flex h-[60px] w-[90px] items-center justify-center rounded-[30px] bg-[#eeeeee]" aria-label="Open source">
               <Globe2 size={29} className="text-[#303030]" />
-            </span>
+            </a>
           </div>
 
           <p className="mt-[107px] text-center font-['Outfit',sans-serif] text-[17px] font-bold text-[#c0c4d8]">
-            We’ll notify you once everyone has set their availability.
+            {feedback || 'We’ll notify you once everyone has set their availability.'}
           </p>
         </aside>
       </section>
