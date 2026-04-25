@@ -64,6 +64,10 @@ For production, deploy FastAPI to Cloud Run and grant the Cloud Run service acco
 - `GET /me`
 - `GET /users/me/preferences`
 - `POST /users/me/preferences`
+- `GET /users/me/calendar/connect`
+- `GET /auth/google/calendar/callback`
+- `GET /users/me/calendar/status`
+- `DELETE /users/me/calendar`
 - `POST /groups`
 - `GET /groups`
 - `GET /groups/{group_id}`
@@ -79,8 +83,43 @@ Create a `.env` file in `backend/` to enable external services:
 
 ```bash
 FIREBASE_PROJECT_ID=your-project-id
+GOOGLE_OAUTH_CLIENT_ID=...
+GOOGLE_OAUTH_CLIENT_SECRET=...
+GOOGLE_CALENDAR_REDIRECT_URI=http://127.0.0.1:8000/auth/google/calendar/callback
+FRONTEND_CALENDAR_CONNECTED_URL=http://localhost:5173/settings?calendar=connected
+FRONTEND_CALENDAR_ERROR_URL=http://localhost:5173/settings?calendar=error
 TAVILY_API_KEY=...
 GEMINI_API_KEY=...
 ```
 
 Without Tavily or Gemini keys, scheduling still works with mock availability and a deterministic mock venue.
+
+## Google Calendar OAuth
+
+Create an OAuth client in Google Cloud Console:
+
+1. Open APIs & Services -> Credentials.
+2. Create an OAuth client ID for a web application.
+3. Add this authorized redirect URI:
+
+```text
+http://127.0.0.1:8000/auth/google/calendar/callback
+```
+
+4. Add the client ID and secret to `backend/.env`.
+
+The frontend should call `GET /users/me/calendar/connect` with the normal
+Firebase bearer token. The backend returns an `auth_url`; the frontend redirects
+the browser to that URL. After consent, Google redirects to the backend callback,
+and the backend stores the Calendar integration under the current user in
+Firestore.
+
+Stored integration data lives at:
+
+```text
+users/{firebase_uid}/integrations/google_calendar
+```
+
+The backend stores OAuth tokens for the MVP so it can call Google Calendar
+FreeBusy during scheduling and create events for confirmed proposals. Do not
+return these tokens to the frontend.

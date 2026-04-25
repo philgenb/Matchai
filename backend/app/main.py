@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import groups, users
+from app.routers import calendar, groups, users
 from app.settings import settings
 
 app = FastAPI(
@@ -19,6 +19,7 @@ app.add_middleware(
 
 app.include_router(users.router)
 app.include_router(groups.router)
+app.include_router(calendar.router)
 
 
 @app.get("/")

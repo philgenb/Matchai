@@ -82,6 +82,53 @@ def save_user_preferences(user_id: str, preferences: dict[str, Any]) -> None:
     )
 
 
+def calendar_integration_ref(user_id: str):
+    return user_ref(user_id).collection("integrations").document("google_calendar")
+
+
+def calendar_oauth_state_ref(state: str):
+    return firestore_client().collection("calendar_oauth_states").document(state)
+
+
+def get_calendar_integration(user_id: str) -> dict[str, Any] | None:
+    snapshot = calendar_integration_ref(user_id).get()
+    if not snapshot.exists:
+        return None
+    data = snapshot.to_dict() or {}
+    if not data.get("connected"):
+        return None
+    return data
+
+
+def save_calendar_integration(user_id: str, integration: dict[str, Any]) -> None:
+    calendar_integration_ref(user_id).set(
+        {
+            **integration,
+            "connected": True,
+            "updated_at": now_iso(),
+        },
+        merge=True,
+    )
+    save_user_preferences(
+        user_id,
+        {
+            **user_preferences(user_id),
+            "calendar_connected": True,
+        },
+    )
+
+
+def delete_calendar_integration(user_id: str) -> None:
+    calendar_integration_ref(user_id).delete()
+    save_user_preferences(
+        user_id,
+        {
+            **user_preferences(user_id),
+            "calendar_connected": False,
+        },
+    )
+
+
 def proposal_from_doc(group_id: str, proposal_id: str, data: dict[str, Any]) -> MeetingProposal:
     rsvps = {
         snapshot.id: (snapshot.to_dict() or {}).get("status")

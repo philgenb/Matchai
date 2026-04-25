@@ -74,4 +74,15 @@ class CalendarEventResponse(BaseModel):
     calendar_url: str | None = None
 
 
+class CalendarConnectResponse(BaseModel):
+    auth_url: str
+
+
+class CalendarStatusResponse(BaseModel):
+    connected: bool
+    google_email: str | None = None
+    scopes: list[str] = Field(default_factory=list)
+    updated_at: str | None = None
+
+
 GroupDetail.model_rebuild()

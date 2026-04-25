@@ -5,16 +5,45 @@ import httpx
 from app.firebase import firestore_client
 from app.repositories import group_members, group_ref, proposal_ref, user_preferences
 from app.schemas import MeetingProposal, VenueCandidate
+from app.services.calendar import get_busy_windows
 from app.settings import settings
 from app.storage import new_id, now_iso
 
 
-def _next_candidate_slot() -> tuple[str, str]:
+def _candidate_slots() -> list[tuple[str, str]]:
     now = datetime.now(UTC)
-    days_until_saturday = (5 - now.weekday()) % 7 or 7
-    start = (now + timedelta(days=days_until_saturday)).replace(hour=18, minute=30, second=0, microsecond=0)
-    end = start + timedelta(hours=2)
-    return start.isoformat(), end.isoformat()
+    slots: list[tuple[str, str]] = []
+    for day_offset in range(1, 15):
+        candidate_day = now + timedelta(days=day_offset)
+        for hour in (18, 19, 20):
+            start = candidate_day.replace(hour=hour, minute=30, second=0, microsecond=0)
+            end = start + timedelta(hours=2)
+            slots.append((start.isoformat(), end.isoformat()))
+    return slots
+
+
+def _overlaps(slot_start: str, slot_end: str, busy_window: dict[str, str]) -> bool:
+    busy_start = busy_window.get("start")
+    busy_end = busy_window.get("end")
+    if not busy_start or not busy_end:
+        return False
+    return slot_start < busy_end and busy_start < slot_end
+
+
+def _best_candidate_slot(member_ids: list[str]) -> tuple[str, str]:
+    for slot_start, slot_end in _candidate_slots():
+        has_conflict = False
+        for member_id in member_ids:
+            try:
+                busy_windows = get_busy_windows(member_id, slot_start, slot_end)
+            except Exception:
+                busy_windows = []
+            if any(_overlaps(slot_start, slot_end, busy) for busy in busy_windows):
+                has_conflict = True
+                break
+        if not has_conflict:
+            return slot_start, slot_end
+    return _candidate_slots()[0]
 
 
 def _mock_venue(city: str | None, interests: list[str]) -> VenueCandidate:
@@ -111,7 +140,7 @@ def create_meeting_proposal(group_id: str) -> MeetingProposal:
 
     city = next((prefs["home_city"] for prefs in member_preferences if prefs["home_city"]), None)
     venue = _search_tavily(city, interests) or _mock_venue(city, interests)
-    starts_at, ends_at = _next_candidate_slot()
+    starts_at, ends_at = _best_candidate_slot([member.user.id for member in members])
     summary, rationale = _generate_ai_summary(group["name"], venue, interests)
 
     proposal_id = new_id("prp")

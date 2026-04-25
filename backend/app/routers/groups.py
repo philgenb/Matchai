@@ -23,6 +23,7 @@ from app.schemas import (
     RsvpCreate,
 )
 from app.services.planner import create_meeting_proposal
+from app.services.calendar import create_calendar_event
 from app.storage import new_id, new_invite_code, now_iso
 
 router = APIRouter(tags=["groups"])
@@ -261,18 +262,25 @@ def add_to_calendar(
 ) -> CalendarEventResponse:
     """Add a proposal to the user's calendar.
 
-    This endpoint currently validates that the proposal exists and that the
-    authenticated user belongs to the proposal's group, then returns a mocked
-    success payload. It is the integration point for the future Google Calendar
-    implementation that will create a real calendar event from the proposal's
-    title, time window, location, and participant context.
+    This endpoint validates that the proposal exists and that the authenticated
+    user belongs to the proposal's group. If the user has connected Google
+    Calendar, the backend creates a real event in the user's primary calendar.
+    If the user has not connected Calendar yet, the response explains that the
+    calendar connection is required.
     """
     proposal = proposal_by_id(proposal_id)
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
     require_group_member(proposal.group_id, current_user["id"])
+    calendar_url = create_calendar_event(current_user["id"], proposal)
+    if calendar_url:
+        return CalendarEventResponse(
+            status="created",
+            message="Calendar event created in the user's primary Google Calendar.",
+            calendar_url=calendar_url,
+        )
     return CalendarEventResponse(
-        status="mocked",
-        message="Calendar creation is mocked for the MVP. Connect Google Calendar to create real events.",
+        status="calendar_not_connected",
+        message="Connect Google Calendar before adding proposals to the calendar.",
         calendar_url=None,
     )
