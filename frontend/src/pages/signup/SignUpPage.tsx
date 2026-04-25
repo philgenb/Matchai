@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   ArrowUpRight,
   AtSign,
@@ -124,14 +125,12 @@ function TextFieldRow({
   )
 }
 
-function SocialIconButton({ icon, label }: { icon: string; label: string }) {
+function SocialIconButton({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
   return (
     <button
       type="button"
       className="flex h-[56px] w-[114px] items-center justify-center rounded-[14px] bg-white text-[#3f3f3f] shadow-[0_8px_18px_rgba(0,0,0,0.06)] transition hover:bg-[#f8f8f8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-      onClick={() => {
-        // TODO: handle social sign-up.
-      }}
+      onClick={onClick}
       aria-label={label}
     >
       <img src={icon} alt="" aria-hidden width={25} height={25} className="h-[25px] w-[25px]" />
@@ -139,8 +138,9 @@ function SocialIconButton({ icon, label }: { icon: string; label: string }) {
   )
 }
 
-function SignUpPage() {
-  const [mode, setMode] = useState<FormMode>('signup')
+function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
+  const navigate = useNavigate()
+  const [mode, setMode] = useState<FormMode>(initialMode)
   const [activeField, setActiveField] = useState<FieldName | null>('name')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -152,6 +152,11 @@ function SignUpPage() {
     password: '',
     confirmPassword: '',
   })
+
+  useEffect(() => {
+    setMode(initialMode)
+    setSubmitStatus('idle')
+  }, [initialMode])
 
   const emailIsValid = useMemo(() => /\S+@\S+\.\S+/.test(form.email), [form.email])
   const passwordIsValid = useMemo(() => form.password.length >= 8, [form.password])
@@ -179,6 +184,7 @@ function SignUpPage() {
     setSubmitStatus('submitting')
     window.setTimeout(() => {
       setSubmitStatus('success')
+      navigate('/onboarding')
     }, 700)
   }
 
@@ -206,6 +212,7 @@ function SignUpPage() {
                 onChangeMode={(nextMode) => {
                   setMode(nextMode)
                   setSubmitStatus('idle')
+                  navigate(nextMode === 'signup' ? '/signup' : '/signin')
                 }}
               />
             </div>
@@ -300,9 +307,9 @@ function SignUpPage() {
               </p>
 
               <div className="flex items-center justify-between gap-[18px]">
-                <SocialIconButton icon={appleIcon} label="Sign up with Apple" />
-                <SocialIconButton icon={googleIcon} label="Sign up with Google" />
-                <SocialIconButton icon={facebookIcon} label="Sign up with Facebook" />
+                <SocialIconButton icon={appleIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Apple`} onClick={() => navigate('/onboarding')} />
+                <SocialIconButton icon={googleIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Google`} onClick={() => navigate('/onboarding')} />
+                <SocialIconButton icon={facebookIcon} label={`${mode === 'signup' ? 'Sign up' : 'Sign in'} with Facebook`} onClick={() => navigate('/onboarding')} />
               </div>
 
               <button

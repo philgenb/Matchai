@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import hannahAvatar from '../../components/ui/hannah_profile_icon.png'
 import julianAvatar from '../../components/ui/julian_profile_icon.png'
 import hannahBubble from '../../components/ui/hannah_bubble.png'
@@ -14,6 +15,8 @@ import friendsPicture from '/friends_picture.png'
 const navItems = ['Product', 'Functions', 'About us']
 
 function LandingHeaderNav() {
+  const navigate = useNavigate()
+
   return (
     <header className="flex items-center justify-between">
       <img src={matchaiMark} alt="MatchAI logo" width={69} height={69} className="h-[69px] w-[69px] text-[var(--color-primary)]" />
@@ -36,9 +39,7 @@ function LandingHeaderNav() {
             <button
               type="button"
               className="h-[42px] min-w-[157px] rounded-full bg-[var(--color-primary)] px-5 py-2 text-[18px] text-white transition hover:bg-[var(--color-primary-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-55"
-              onClick={() => {
-                // TODO: open demo flow.
-              }}
+              onClick={() => navigate('/signup')}
             >
               Demo
             </button>
@@ -50,13 +51,13 @@ function LandingHeaderNav() {
 }
 
 function PrimaryCtaButton({ label }: { label: string }) {
+  const navigate = useNavigate()
+
   return (
     <button
       type="button"
       className="inline-flex h-[76px] items-center gap-4 rounded-[38px] bg-[var(--color-primary)] px-11 py-3 text-[23px] font-semibold tracking-[-0.04em] text-white transition hover:bg-[var(--color-primary-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-55"
-      onClick={() => {
-        // TODO: hook CTA to onboarding.
-      }}
+      onClick={() => navigate('/signup')}
     >
       <span>{label}</span>
       <span className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-[rgba(255,255,255,0.28)]">
