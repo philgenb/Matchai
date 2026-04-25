@@ -1,20 +1,15 @@
-import friendsPicture from './ui/friends_picture.png'
-import hannahAvatar from '../../../components/ui/hannah_profile_icon.png'
-import julianAvatar from '../../../components/ui/julian_profile_icon.png'
-import hannahBubble from '../../../components/ui/hannah_bubble.png'
-import christianBubble from '../../../components/ui/christian_bubble.png'
-import julianBubble from '../../../components/ui/julian_bubble.png'
-import heroImage from '../../../assets/hero.png'
-import matchaiMarkRaw from '../../../components/ui/matchai_logo?raw'
-import matchaiMarkInverted from '../../../assets/icons/matchai-mark-inverted.svg'
-import peopleGroup from '../../../assets/icons/people-group.svg'
-import googleCalendarLogoRaw from './ui/google_calender_icon?raw'
-import googleMapsPinRaw from './ui/google_maps_icon?raw'
-
-const svgToDataUri = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
-const matchaiMark = svgToDataUri(matchaiMarkRaw)
-const googleCalendarLogo = svgToDataUri(googleCalendarLogoRaw)
-const googleMapsPin = svgToDataUri(googleMapsPinRaw)
+import hannahAvatar from '../../components/ui/hannah_profile_icon.png'
+import julianAvatar from '../../components/ui/julian_profile_icon.png'
+import hannahBubble from '../../components/ui/hannah_bubble.png'
+import christianBubble from '../../components/ui/christian_bubble.png'
+import julianBubble from '../../components/ui/julian_bubble.png'
+import heroImage from '../../assets/hero.png'
+import matchaiMark from '../../assets/icons/matchai-logo.svg'
+import matchaiMarkInverted from '../../assets/icons/matchai-mark-inverted.svg'
+import peopleGroup from '../../assets/icons/people-group.svg'
+import googleCalendarLogo from '../../assets/icons/google-calendar-icon.svg'
+import googleMapsPin from '../../assets/icons/google-maps-icon.svg'
+import friendsPicture from '/friends_picture.png'
 
 const navItems = ['Product', 'Functions', 'About us']
 

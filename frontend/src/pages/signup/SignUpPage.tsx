@@ -9,18 +9,11 @@ import {
   Lock,
   UserRound,
 } from 'lucide-react'
-import friendsPicture from '../landing/components/ui/friends_picture.png'
-import matchaiLogoRaw from '../../components/ui/matchai_logo?raw'
-import appleIconRaw from './components/ui/apple_icon?raw'
-import facebookIconRaw from './components/ui/facebook_icon?raw'
-import googleIconRaw from './components/ui/google_icon?raw'
-
-const svgToDataUri = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
-
-const matchaiLogo = svgToDataUri(matchaiLogoRaw)
-const appleIcon = svgToDataUri(appleIconRaw)
-const facebookIcon = svgToDataUri(facebookIconRaw)
-const googleIcon = svgToDataUri(googleIconRaw)
+import matchaiLogo from '../../components/ui/matchai_logo.svg'
+import appleIcon from '../../assets/icons/apple-icon.svg'
+import facebookIcon from '../../assets/icons/facebook-icon.svg'
+import googleIcon from '../../assets/icons/google-icon.svg'
+import friendsPictureTwo from '/friends_picture_2.png'
 
 type FormMode = 'signup' | 'signin'
 type FieldName = 'name' | 'email' | 'password' | 'confirmPassword'
@@ -47,12 +40,14 @@ type TextFieldRowProps = {
 
 function BrandBadge({ className }: { className?: string }) {
   return (
-    <span
-      className={`inline-flex h-[65px] w-[65px] items-center justify-center rounded-[14px] bg-[var(--color-primary)] ${className ?? ''}`}
+    <img
+      src={matchaiLogo}
+      alt=""
       aria-hidden
-    >
-      <img src={matchaiLogo} alt="" width={34} height={34} className="h-[34px] w-[34px]" />
-    </span>
+      width={69}
+      height={69}
+      className={`h-[69px] w-[69px] ${className ?? ''}`}
+    />
   )
 }
 
@@ -64,7 +59,7 @@ function AuthModeToggle({
   onChangeMode: (mode: FormMode) => void
 }) {
   return (
-    <div className="inline-flex h-[56px] w-[199px] items-center rounded-full bg-white p-[6px] shadow-[0_0_17px_rgba(186,186,186,0.25)]">
+    <div className="inline-flex h-[56px] w-[199px] items-center rounded-full bg-white p-[6px] shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
       <button
         type="button"
         className={`h-full w-1/2 rounded-full text-[16px] font-bold tracking-[-0.03em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] ${
@@ -133,7 +128,7 @@ function SocialIconButton({ icon, label }: { icon: string; label: string }) {
   return (
     <button
       type="button"
-      className="flex h-[56px] w-[114px] items-center justify-center rounded-[14px] bg-white text-[#3f3f3f] shadow-[0_0_15px_rgba(186,186,186,0.13)] transition hover:bg-[#f8f8f8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex h-[56px] w-[114px] items-center justify-center rounded-[14px] bg-white text-[#3f3f3f] shadow-[0_8px_18px_rgba(0,0,0,0.06)] transition hover:bg-[#f8f8f8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-60"
       onClick={() => {
         // TODO: handle social sign-up.
       }}
@@ -188,7 +183,7 @@ function SignUpPage() {
   }
 
   return (
-    <main className="relative mx-auto min-h-screen max-w-[1728px] overflow-hidden bg-[var(--color-page)] px-[88px] py-[84px]">
+    <main className="relative mx-auto min-h-screen max-w-[1728px] overflow-hidden bg-[#efefef] px-[88px] py-[84px]">
       <div className="pointer-events-none absolute -left-[1129px] top-[296px] h-[728px] w-[1385px] rounded-full bg-[radial-gradient(circle,_rgba(180,115,255,0.22)_0%,_rgba(180,115,255,0)_68%)]" />
       <div className="pointer-events-none absolute left-[256px] top-[-505px] h-[623px] w-[1376px] rounded-full bg-[radial-gradient(circle,_rgba(124,168,255,0.2)_0%,_rgba(124,168,255,0)_70%)]" />
       <div className="pointer-events-none absolute left-[1581px] top-[84px] h-[997px] w-[1265px] rounded-full bg-[radial-gradient(circle,_rgba(180,115,255,0.2)_0%,_rgba(180,115,255,0)_70%)]" />
@@ -197,7 +192,7 @@ function SignUpPage() {
         <BrandBadge />
       </header>
 
-      <section className="relative mx-auto mt-[35px] w-[1046px] rounded-[32px] border-[2px] border-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.5)] p-[56px_80px_68px] shadow-[0_0_40px_rgba(0,0,0,0.07)] [box-shadow:inset_0_0_16px_rgba(255,255,255,0.8),0_0_40px_rgba(0,0,0,0.07)]">
+      <section className="relative mx-auto mt-[35px] w-[1046px] rounded-[32px] border-[2px] border-[rgba(255,255,255,0.55)] bg-[rgba(255,255,255,0.48)] p-[56px_80px_68px] shadow-[0_16px_40px_rgba(0,0,0,0.05)] backdrop-blur-[2px] [box-shadow:inset_0_0_14px_rgba(255,255,255,0.78),0_16px_40px_rgba(0,0,0,0.05)]">
         <BrandBadge className="absolute right-[88px] top-[68px]" />
 
         <div className="grid grid-cols-[378px_1fr] gap-[83px]">
@@ -342,7 +337,7 @@ function SignUpPage() {
 
           <aside className="pt-[112px]">
             <img
-              src={friendsPicture}
+              src={friendsPictureTwo}
               alt="Group of friends smiling outside"
               width={416}
               height={499}
