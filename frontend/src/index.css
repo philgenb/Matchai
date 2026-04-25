@@ -1,0 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Inter:wght@500;600&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@700;800&family=Space+Grotesk:wght@500&display=swap");
+@import "tailwindcss";
+
+:root {
+  --color-page: #f0f0f0;
+  --color-primary: #b473ff;
+  --color-primary-strong: #9f56f3;
+  --color-heading: #2f2f2f;
+  --color-heading-soft: #5b5b5b;
+  --color-muted: #979797;
+  --color-surface: #ffffff;
+  --color-border-soft: rgba(0, 0, 0, 0.08);
+  --color-border-highlight: rgba(170, 118, 225, 0.25);
+  --color-surface-highlight: rgba(170, 118, 225, 0.07);
+  --color-input-text: #3e3e3e;
+  --color-caption: #c0c4d8;
+  --color-tag-purple: #b282e5;
+  --color-tag-blue: #4868a9;
+  --color-tag-sky: #7ca8ff;
+  --radius-xl: 22px;
+  --radius-2xl: 30px;
+  --radius-pill: 38px;
+  --radius-hero-image: 53px;
+  --shadow-soft: 0 0 28px rgba(0, 0, 0, 0.08);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-page);
+}
