@@ -45,7 +45,6 @@ def init_firebase_app() -> firebase_admin.App:
     if resolved_project_id:
         os.environ.setdefault("GOOGLE_CLOUD_PROJECT", resolved_project_id)
         os.environ.setdefault("GOOGLE_CLOUD_QUOTA_PROJECT", resolved_project_id)
-
     project_options = {"projectId": resolved_project_id} if resolved_project_id else None
 
     if settings.firebase_credentials_path:
