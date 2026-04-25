@@ -3,15 +3,18 @@ import type { ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowUpRight,
+  AtSign,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
   LogOut,
   Globe2,
   Image as ImageIcon,
+  Link2,
   LoaderCircle,
   MapPin,
   Phone,
+  UsersRound,
 } from 'lucide-react'
 import matchaiLogo from '../../components/ui/matchai_logo.svg'
 import googleCalendarIcon from '../../assets/icons/google-calendar-icon.svg'
@@ -19,6 +22,7 @@ import googleMapsIcon from '../../assets/icons/google-maps-icon.svg'
 import hannahAvatar from '../../components/ui/hannah_profile_icon.png'
 import julianAvatar from '../../components/ui/julian_profile_icon.png'
 import { api, signOutFrontend } from '../../lib/api'
+import { groupRoute, useAuthSession } from '../../lib/authSession'
 
 const groupId = 'aral-chiller'
 const chips = ['Café', 'Bar', 'Restaurant', 'Brunch', 'Walk', 'Park', 'Club', 'Bowling']
@@ -29,9 +33,11 @@ const LAST_PROPOSAL_KEY = 'matchai:lastProposal'
 
 function FlowPageShell({ children, showHome = false }: { children: ReactNode; showHome?: boolean }) {
   const navigate = useNavigate()
+  const { clearSession } = useAuthSession()
 
   const handleLogout = async () => {
     await signOutFrontend()
+    clearSession()
     navigate('/', { replace: true })
   }
 
@@ -145,6 +151,7 @@ function LocationInput({ className = '' }: { className?: string }) {
 
 export function OnboardingPage() {
   const navigate = useNavigate()
+  const { refreshSession } = useAuthSession()
   const [liked, setLiked] = useState(['Café', 'Bar'])
   const [disliked, setDisliked] = useState(['Café', 'Bar'])
   const [homeCity, setHomeCity] = useState('Munich')
@@ -207,7 +214,8 @@ export function OnboardingPage() {
         onboarding_completed: true,
       })
       setIsSaving(false)
-      navigate('/app')
+      const session = await refreshSession()
+      navigate(session.groups.length > 0 ? groupRoute(session.groups[0]) : '/groups/new')
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Could not save preferences. Please try again.')
       setIsSaving(false)
@@ -308,64 +316,149 @@ export function OnboardingPage() {
 
 export function CreateGroupPage() {
   const navigate = useNavigate()
+  const { refreshSession } = useAuthSession()
+  const [groupName, setGroupName] = useState('Aral-Chiller')
+  const [createdGroup, setCreatedGroup] = useState(null)
+  const [copyStatus, setCopyStatus] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
 
-  const createGroup = async () => {
+  const ensureGroup = async () => {
+    if (createdGroup) {
+      return createdGroup
+    }
+
     setIsCreating(true)
     setError('')
     try {
       await api.me()
       const group = await api.createGroup({
-        name: 'Aral-Chiller',
+        name: groupName.trim() || 'Aral-Chiller',
         description: 'We check calendars, locations, and preferences to suggest the best meetup.',
       })
       window.localStorage.setItem(LAST_GROUP_ID_KEY, group.id)
-      navigate(`/groups/${group.id}/waiting`)
+      setCreatedGroup(group)
+      await refreshSession()
+      return group
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create the group. Please try again.')
+      return null
     } finally {
       setIsCreating(false)
     }
   }
 
+  const inviteLink = createdGroup ? `${window.location.origin}/groups/join/${createdGroup.id}` : ''
+
+  const copyInviteLink = async () => {
+    const group = await ensureGroup()
+    if (!group) return
+
+    const link = `${window.location.origin}/groups/join/${group.id}`
+    try {
+      await window.navigator.clipboard.writeText(link)
+      setCopyStatus('Link copied.')
+    } catch {
+      setCopyStatus(link)
+    }
+  }
+
+  const finishGroup = async () => {
+    const group = await ensureGroup()
+    if (group) {
+      navigate(`/groups/${group.id}/waiting`)
+    }
+  }
+
   return (
     <FlowPageShell showHome>
-      <section className="relative mx-auto mt-[40px] max-w-[1000px] text-center">
-        <AvatarStack />
-        <h1 className="mt-[46px] font-['Outfit',sans-serif] text-[74px] font-bold leading-[1.05] tracking-[-0.04em] text-[#303030]">
-          Aral-Chiller is all set.
-        </h1>
-        <p className="mx-auto mt-[56px] max-w-[970px] font-['Geist',sans-serif] text-[27px] font-medium leading-[1.25] tracking-[-0.03em] text-[#979797]">
-          We check your calendars, look at your locations, and suggest meetups that match your preferences. You’ll get a WhatsApp from us, just sit back.
-        </p>
-        <button
-          type="button"
-          disabled={isCreating}
-          onClick={createGroup}
-          className="mx-auto mt-[68px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:opacity-60"
-        >
-          {isCreating ? 'Creating group...' : 'Find a meeting ASAP'}
-          <IconButtonCircle />
-        </button>
-        {error && <p className="mx-auto mt-4 max-w-[520px] font-['Outfit',sans-serif] text-[14px] font-bold text-[#979797]">{error}</p>}
+      <section className="relative mx-auto mt-[35px] h-[741px] w-[1046px] rounded-[32px] border-[2px] border-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.65)] px-[80px] py-[86px] shadow-[0_0_40px_rgba(0,0,0,0.07)] [box-shadow:inset_0_0_16px_rgba(255,255,255,0.8),0_0_40px_rgba(0,0,0,0.07)]">
+        <img src={matchaiLogo} alt="" aria-hidden className="absolute right-[88px] top-[68px] h-[65px] w-[65px]" />
+        <div className="absolute right-[170px] top-[70px]">
+          <AvatarStack />
+        </div>
 
-        <section className="mt-[118px]">
-          <h2 className="font-['Outfit',sans-serif] text-[21px] font-bold text-[#303030]">Members of Aral-Chiller</h2>
-          <div className="mt-[34px] flex justify-center gap-[25px]">
-            <span className="flex h-[49px] w-[232px] items-center justify-between rounded-[9px] bg-[var(--color-primary)] px-6 font-['Outfit',sans-serif] text-[18px] font-bold text-white">
-              johannes@gmail.com
-              <CheckCircle2 size={18} />
+        <div className="max-w-[878px]">
+          <h1 className="font-['Outfit',sans-serif] text-[45px] font-bold tracking-[-0.99px] text-[#232323]">Create a group</h1>
+
+          <label className="mt-[54px] block w-[378px]">
+            <span className="font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Give your group a name</span>
+            <span className="mt-5 flex h-[61px] w-full items-center rounded-[13px] border border-[rgba(0,0,0,0.1)] bg-white px-6">
+              <UsersRound size={25} className="text-[#3d3d3d]" />
+              <span aria-hidden className="mx-6 h-[37px] w-px bg-[#dddddd]" />
+              <input
+                value={groupName}
+                onChange={(event) => setGroupName(event.target.value)}
+                disabled={Boolean(createdGroup)}
+                className="w-full bg-transparent font-['Outfit',sans-serif] text-[22px] font-medium text-[#3e3e3e] outline-none disabled:text-[#7b7b7b]"
+              />
             </span>
-            {[1, 2].map((item) => (
-              <span key={item} className="flex h-[49px] w-[232px] items-center justify-between rounded-[9px] bg-[#f1f1f1] px-6 font-['Outfit',sans-serif] text-[18px] font-bold text-[#666]">
+          </label>
+
+          <div className="mx-2 mt-[47px] h-[3px] bg-[#eeeeee]" />
+
+          <h2 className="mt-[41px] font-['Outfit',sans-serif] text-[24px] font-bold tracking-[-0.03em] text-[#303030]">Invite your friends</h2>
+          <div className="mt-[34px] grid grid-cols-[300px_1fr] gap-[80px]">
+            <div>
+              <p className="mb-[20px] font-['Outfit',sans-serif] text-[16px] font-bold text-[#979797]">Via Link</p>
+              <button
+                type="button"
+                disabled={isCreating}
+                onClick={copyInviteLink}
+                className="flex h-[59px] w-[186px] items-center justify-center gap-3 rounded-[16px] bg-[#eef3ff] font-['Outfit',sans-serif] text-[18px] font-bold text-[#7ca8ff] disabled:opacity-60"
+              >
+                <Link2 size={23} />
+                {isCreating ? 'Creating...' : 'Copy Link'}
+              </button>
+              <p className="mt-[32px] max-w-[290px] break-words font-['Outfit',sans-serif] text-[14px] font-bold text-[#c0c4d8]">
+                {copyStatus || inviteLink || 'Send this link to your friends to plan together.'}
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-[20px] font-['Outfit',sans-serif] text-[16px] font-bold text-[#979797]">Via Email</p>
+              <div className="flex items-center gap-[14px]">
+                <span className="flex h-[61px] w-[370px] items-center rounded-[13px] border border-[rgba(180,115,255,0.25)] bg-white px-5 opacity-70">
+                  <AtSign size={22} className="text-[#3d3d3d]" />
+                  <span aria-hidden className="mx-6 h-[37px] w-px bg-[#dddddd]" />
+                  <span className="font-['Outfit',sans-serif] text-[17px] font-bold text-[#3e3e3e]">mustermann@gmail.com</span>
+                  <CheckCircle2 size={19} className="ml-auto text-[#244c99]" />
+                </span>
+                <button
+                  type="button"
+                  disabled
+                  className="h-[61px] w-[111px] rounded-[18px] bg-[var(--color-primary)] font-['Outfit',sans-serif] text-[18px] font-bold text-white opacity-60"
+                >
+                  Add
+                </button>
+              </div>
+              <span className="mt-[12px] inline-flex h-[38px] items-center rounded-[9px] bg-[#f3e8ff] px-4 font-['Outfit',sans-serif] text-[13px] font-bold text-[#9f56f3] opacity-70">
                 johannes@gmail.com
-                <Clock3 size={19} className="text-[#111]" />
               </span>
-            ))}
+            </div>
           </div>
-        </section>
+
+          <div className="mt-[48px] flex justify-end">
+            <button
+              type="button"
+              disabled={isCreating}
+              onClick={finishGroup}
+              className="flex h-[59px] w-[160px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-8 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:opacity-60"
+            >
+              {isCreating ? 'Creating...' : 'Finish'}
+              <IconButtonCircle />
+            </button>
+          </div>
+
+          {error && <p className="mt-4 text-right font-['Outfit',sans-serif] text-[14px] font-bold text-[#979797]">{error}</p>}
+        </div>
       </section>
+
+      <div className="mt-[56px] flex items-center justify-center gap-[8px]" aria-hidden>
+        <span className="h-[7px] w-[46px] rounded-l-[77px] bg-[var(--color-primary)]" />
+        <span className="h-[7px] w-[46px] bg-[var(--color-primary)]" />
+        <span className="h-[7px] w-[46px] rounded-r-[77px] bg-[var(--color-primary)]" />
+      </div>
     </FlowPageShell>
   )
 }
@@ -373,34 +466,47 @@ export function CreateGroupPage() {
 export function WaitingForGroupMatchPage() {
   const navigate = useNavigate()
   const { groupId: routeGroupId } = useParams()
+  const { refreshSession } = useAuthSession()
+  const [groupDetail, setGroupDetail] = useState(null)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [isLoadingGroup, setIsLoadingGroup] = useState(true)
   const [progress, setProgress] = useState(0)
+  const [matchingStarted, setMatchingStarted] = useState(false)
   const [scheduleFinished, setScheduleFinished] = useState(false)
   const [scheduleBlocked, setScheduleBlocked] = useState(false)
-  const [statusText, setStatusText] = useState('Starting backend match...')
+  const [statusText, setStatusText] = useState('')
 
   useEffect(() => {
     const activeGroupId = routeGroupId || window.localStorage.getItem(LAST_GROUP_ID_KEY) || groupId
     let cancelled = false
 
-    api.scheduleGroup(activeGroupId)
-      .then((proposal) => {
+    Promise.all([api.me(), api.getGroup(activeGroupId)])
+      .then(([user, group]) => {
         if (cancelled) return
-        window.localStorage.setItem(LAST_PROPOSAL_KEY, JSON.stringify(proposal))
-        setStatusText('Proposal found.')
-        setScheduleFinished(true)
+        setCurrentUser(user)
+        setGroupDetail(group)
+        window.localStorage.setItem(LAST_GROUP_ID_KEY, group.id)
+        if (group.status === 'proposal_found' || group.status === 'confirmed') {
+          navigate(`/groups/${group.id}/match`, { replace: true })
+        }
       })
       .catch((error) => {
         if (cancelled) return
-        setStatusText(error instanceof Error ? error.message : 'Could not start matching.')
+        setStatusText(error instanceof Error ? error.message : 'Could not load this group.')
         setScheduleBlocked(true)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingGroup(false)
       })
 
     return () => {
       cancelled = true
     }
-  }, [routeGroupId])
+  }, [navigate, routeGroupId])
 
   useEffect(() => {
+    if (!matchingStarted) return undefined
+
     const interval = window.setInterval(() => {
       setProgress((current) => {
         if (scheduleBlocked) {
@@ -419,37 +525,93 @@ export function WaitingForGroupMatchPage() {
     }, 320)
 
     return () => window.clearInterval(interval)
-  }, [navigate, routeGroupId, scheduleBlocked, scheduleFinished])
+  }, [matchingStarted, navigate, routeGroupId, scheduleBlocked, scheduleFinished])
+
+  const startMatching = async () => {
+    const activeGroupId = routeGroupId || groupDetail?.id || window.localStorage.getItem(LAST_GROUP_ID_KEY) || groupId
+    setMatchingStarted(true)
+    setScheduleBlocked(false)
+    setScheduleFinished(false)
+    setProgress(0)
+    setStatusText('Starting backend match...')
+
+    try {
+      const proposal = await api.scheduleGroup(activeGroupId)
+      window.localStorage.setItem(LAST_PROPOSAL_KEY, JSON.stringify(proposal))
+      setStatusText('Proposal found.')
+      setScheduleFinished(true)
+      await refreshSession()
+    } catch (error) {
+      setStatusText(error instanceof Error ? error.message : 'Could not start matching.')
+      setScheduleBlocked(true)
+    }
+  }
+
+  const isOwner = Boolean(
+    groupDetail?.participants?.some((participant) => participant.role === 'owner' && participant.user.id === currentUser?.id),
+  )
+
+  if (isLoadingGroup || !groupDetail) {
+    return (
+      <FlowPageShell showHome>
+        <section className="mx-auto mt-[220px] max-w-[820px] text-center">
+          <h1 className="font-['Outfit',sans-serif] text-[64px] font-bold tracking-[-0.04em] text-[#303030]">
+            {isLoadingGroup ? 'Loading group...' : 'Group unavailable'}
+          </h1>
+          <p className="mx-auto mt-8 max-w-[640px] font-['Geist',sans-serif] text-[24px] font-medium leading-[1.3] tracking-[-0.03em] text-[#979797]">
+            {statusText || 'Fetching your group from the backend.'}
+          </p>
+        </section>
+      </FlowPageShell>
+    )
+  }
 
   return (
     <FlowPageShell showHome>
       <section className="relative mx-auto mt-[80px] max-w-[1000px] text-center">
         <AvatarStack />
         <h1 className="mt-[46px] font-['Outfit',sans-serif] text-[74px] font-bold leading-[1.05] tracking-[-0.04em] text-[#303030]">
-          Finding your group match.
+          {matchingStarted ? 'Finding your group match.' : `${groupDetail.name} is all set.`}
         </h1>
         <p className="mx-auto mt-[56px] max-w-[970px] font-['Geist',sans-serif] text-[27px] font-medium leading-[1.25] tracking-[-0.03em] text-[#979797]">
-          We check your calendars, look at your locations, and suggest meetups that match your preferences. You’ll get a WhatsApp from us, just sit back.
+          {matchingStarted
+            ? 'We check your calendars, look at your locations, and suggest meetups that match your preferences.'
+            : isOwner
+              ? 'Invite your friends, then start matching when you are ready.'
+              : 'You joined the group. The creator can start matching when everyone is ready.'}
         </p>
-        <div className="mx-auto mt-[68px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white">
-          Matching {progress}%
-          <span className="inline-flex h-[41px] w-[41px] items-center justify-center rounded-full bg-[rgba(120,54,199,0.34)]">
-            <LoaderCircle className="animate-spin" size={22} />
-          </span>
-        </div>
+        {matchingStarted ? (
+          <div className="mx-auto mt-[68px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white">
+            Matching {progress}%
+            <span className="inline-flex h-[41px] w-[41px] items-center justify-center rounded-full bg-[rgba(120,54,199,0.34)]">
+              <LoaderCircle className="animate-spin" size={22} />
+            </span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={!isOwner}
+            onClick={startMatching}
+            className="mx-auto mt-[68px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Find a meeting ASAP
+            <IconButtonCircle />
+          </button>
+        )}
         <p className="mt-4 font-['Outfit',sans-serif] text-[14px] font-bold text-[#979797]">{statusText}</p>
 
         <section className="mt-[118px]">
-          <h2 className="font-['Outfit',sans-serif] text-[21px] font-bold text-[#303030]">Members of Aral-Chiller</h2>
+          <h2 className="font-['Outfit',sans-serif] text-[21px] font-bold text-[#303030]">Members of {groupDetail.name}</h2>
           <div className="mt-[34px] flex justify-center gap-[25px]">
-            <span className="flex h-[49px] w-[232px] items-center justify-between rounded-[9px] bg-[var(--color-primary)] px-6 font-['Outfit',sans-serif] text-[18px] font-bold text-white">
-              johannes@gmail.com
-              <CheckCircle2 size={18} />
-            </span>
-            {[1, 2].map((item) => (
-              <span key={item} className="flex h-[49px] w-[232px] items-center justify-between rounded-[9px] bg-[#f1f1f1] px-6 font-['Outfit',sans-serif] text-[18px] font-bold text-[#666]">
-                johannes@gmail.com
-                <Clock3 size={19} className="text-[#111]" />
+            {groupDetail.participants.map((participant) => (
+              <span
+                key={participant.user.id}
+                className={`flex h-[49px] w-[232px] items-center justify-between rounded-[9px] px-6 font-['Outfit',sans-serif] text-[18px] font-bold ${
+                  participant.role === 'owner' ? 'bg-[var(--color-primary)] text-white' : 'bg-[#f1f1f1] text-[#666]'
+                }`}
+              >
+                <span className="truncate">{participant.user.email}</span>
+                {participant.role === 'owner' ? <CheckCircle2 size={18} /> : <Clock3 size={19} className="text-[#111]" />}
               </span>
             ))}
           </div>

@@ -83,6 +83,10 @@ export const api = {
       body: JSON.stringify(group),
     }),
   getGroup: (groupId) => request(`/groups/${groupId}`),
+  joinGroupById: (groupId) =>
+    request(`/groups/${groupId}/join`, {
+      method: 'POST',
+    }),
   scheduleGroup: (groupId) =>
     request(`/groups/${groupId}/schedule`, {
       method: 'POST',

@@ -22,6 +22,7 @@ import {
   signInWithGoogle,
   signUpWithEmail,
 } from '../../lib/firebase'
+import { groupRoute, useAuthSession } from '../../lib/authSession'
 import friendsPictureTwo from '/friends_picture_2.png'
 
 type FormMode = 'signup' | 'signin'
@@ -148,6 +149,7 @@ function SocialIconButton({ icon, label, onClick }: { icon: string; label: strin
 
 function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
   const navigate = useNavigate()
+  const { refreshSession } = useAuthSession()
   const [mode, setMode] = useState<FormMode>(initialMode)
   const [activeField, setActiveField] = useState<FieldName | null>('name')
   const [showPassword, setShowPassword] = useState(false)
@@ -161,6 +163,20 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
     password: '',
     confirmPassword: '',
   })
+
+  const navigateAfterAuth = (session) => {
+    if (window.localStorage.getItem('matchai:pendingJoinGroupId')) {
+      navigate('/app')
+      return
+    }
+
+    if (!session.preferences?.onboarding_completed) {
+      navigate('/onboarding')
+      return
+    }
+
+    navigate(session.groups.length > 0 ? groupRoute(session.groups[0]) : '/groups/new')
+  }
 
   useEffect(() => {
     setMode(initialMode)
@@ -209,8 +225,9 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
         await persistFirebaseToken(credentials?.user)
       }
       await api.me()
+      const session = await refreshSession()
       setSubmitStatus('success')
-      navigate('/app')
+      navigateAfterAuth(session)
     }
 
     authenticate().catch((error) => {
@@ -234,7 +251,8 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
         await persistFirebaseToken(credentials?.user)
       }
       await api.me()
-      navigate('/app')
+      const session = await refreshSession()
+      navigateAfterAuth(session)
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Sign in failed.')
     }

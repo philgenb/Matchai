@@ -1,7 +1,12 @@
 import AppRouter from './routes/AppRouter'
+import { AuthSessionProvider } from './lib/authSession'
 
 function App() {
-  return <AppRouter />
+  return (
+    <AuthSessionProvider>
+      <AppRouter />
+    </AuthSessionProvider>
+  )
 }
 
 export default App

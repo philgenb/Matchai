@@ -154,6 +154,26 @@ def get_group(group_id: str, current_user: dict = Depends(get_or_create_current_
     return _group_detail(group_id, group)
 
 
+@router.post("/groups/{group_id}/join", response_model=GroupDetail)
+def join_group_by_id(group_id: str, current_user: dict = Depends(get_or_create_current_user)) -> GroupDetail:
+    """Join a group directly by its group ID.
+
+    The frontend invite link can point to `/groups/join/{group_id}` without
+    needing a separate invite-code lookup. Joining is idempotent and returns
+    the current group detail.
+    """
+    _, group = _get_group_or_404(group_id)
+    group_ref(group_id).collection("members").document(current_user["id"]).set(
+        {
+            "user_id": current_user["id"],
+            "role": "member",
+            "joined_at": now_iso(),
+        },
+        merge=True,
+    )
+    return _group_detail(group_id, group)
+
+
 @router.post("/groups/join/{invite_code}", response_model=GroupDetail)
 def join_group(invite_code: str, current_user: dict = Depends(get_or_create_current_user)) -> GroupDetail:
     """Join a group using its invite code.
