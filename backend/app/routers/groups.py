@@ -80,6 +80,16 @@ def create_group(
     payload: GroupCreate,
     current_user: dict = Depends(get_or_create_current_user),
 ) -> GroupDetail:
+    """Create a new friend group owned by the authenticated user.
+
+    The endpoint stores the group document in Firestore, creates the current
+    user as the initial `owner` member, and generates a random invite code.
+    The invite code is mirrored into the `invite_codes` collection so join
+    requests can look up the group quickly without scanning all groups.
+
+    The response includes the full group detail payload, including the owner
+    participant and the generated invite link path for the frontend.
+    """
     db = firestore_client()
     group_id = new_id("grp")
     invite_code = new_invite_code()
@@ -111,6 +121,14 @@ def create_group(
 
 @router.get("/groups", response_model=list[GroupSummary])
 def list_groups(current_user: dict = Depends(get_or_create_current_user)) -> list[GroupSummary]:
+    """List all groups that include the authenticated user.
+
+    Membership is resolved from Firestore group member subcollections. Each
+    returned item is a compact summary with the group metadata, invite code,
+    current planning status, and member count. The detailed participant list
+    and proposal are intentionally omitted here so dashboard screens can load
+    quickly.
+    """
     summaries: list[GroupSummary] = []
     for group_id in group_ids_for_user(current_user["id"]):
         snapshot = group_ref(group_id).get()
@@ -121,6 +139,15 @@ def list_groups(current_user: dict = Depends(get_or_create_current_user)) -> lis
 
 @router.get("/groups/{group_id}", response_model=GroupDetail)
 def get_group(group_id: str, current_user: dict = Depends(get_or_create_current_user)) -> GroupDetail:
+    """Return the full group screen data for a member.
+
+    The caller must already be a member of the requested group. The response
+    contains group metadata, participants, each participant's RSVP state when a
+    proposal exists, and the current proposal if the group has one.
+
+    This is the primary endpoint for rendering the shared group screen in the
+    React app.
+    """
     require_group_member(group_id, current_user["id"])
     _, group = _get_group_or_404(group_id)
     return _group_detail(group_id, group)
@@ -128,6 +155,16 @@ def get_group(group_id: str, current_user: dict = Depends(get_or_create_current_
 
 @router.post("/groups/join/{invite_code}", response_model=GroupDetail)
 def join_group(invite_code: str, current_user: dict = Depends(get_or_create_current_user)) -> GroupDetail:
+    """Join a group using its invite code.
+
+    Invite links point to `/groups/join/{invite_code}` in the frontend. The
+    backend resolves the code through the Firestore `invite_codes` index and
+    inserts the authenticated user into the group's `members` subcollection.
+
+    Joining is idempotent because the member document is written with merge
+    semantics. Calling this endpoint again for the same user keeps them in the
+    group and returns the current group detail.
+    """
     group_id = group_id_for_invite(invite_code)
     if not group_id:
         raise HTTPException(status_code=404, detail="Invite code not found")
@@ -146,6 +183,17 @@ def join_group(invite_code: str, current_user: dict = Depends(get_or_create_curr
 
 @router.post("/groups/{group_id}/schedule", response_model=MeetingProposal)
 def schedule_group(group_id: str, current_user: dict = Depends(get_or_create_current_user)) -> MeetingProposal:
+    """Start the scheduling flow for a group and return a meetup proposal.
+
+    The caller must be a group member. The group status is first marked as
+    `matching_in_progress`, then the planner service gathers group members,
+    preferences, a mock availability slot, and either real or fallback venue
+    and proposal content.
+
+    If `TAVILY_API_KEY` or `GEMINI_API_KEY` are configured, the planner uses
+    those integrations. Otherwise it creates a deterministic MVP proposal.
+    The generated proposal is persisted in Firestore and returned immediately.
+    """
     require_group_member(group_id, current_user["id"])
     group_ref(group_id).set({"status": "matching_in_progress", "updated_at": now_iso()}, merge=True)
     return create_meeting_proposal(group_id)
@@ -156,6 +204,13 @@ def get_group_proposal(
     group_id: str,
     current_user: dict = Depends(get_or_create_current_user),
 ) -> MeetingProposal:
+    """Return the latest proposal for a group.
+
+    The caller must be a member of the group. The repository first checks the
+    group's `current_proposal_id` and falls back to the latest proposal by
+    creation time. The response includes RSVP state keyed by user ID so the
+    frontend can render accept/maybe/decline summaries.
+    """
     require_group_member(group_id, current_user["id"])
     proposal = proposal_for_group(group_id)
     if not proposal:
@@ -169,6 +224,17 @@ def rsvp_to_proposal(
     payload: RsvpCreate,
     current_user: dict = Depends(get_or_create_current_user),
 ) -> MeetingProposal:
+    """Record the authenticated user's RSVP for a proposal.
+
+    Accepted RSVP values are `accept`, `maybe`, and `decline`. The endpoint
+    resolves the proposal through the `proposal_index` collection, confirms the
+    caller belongs to the proposal's group, and writes the RSVP into the
+    proposal's `rsvps` subcollection.
+
+    After saving the RSVP, the group and proposal status are recalculated. If
+    every group member has accepted, both records are marked `confirmed`;
+    otherwise they remain in `proposal_found`.
+    """
     proposal = proposal_by_id(proposal_id)
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
@@ -193,6 +259,14 @@ def add_to_calendar(
     proposal_id: str,
     current_user: dict = Depends(get_or_create_current_user),
 ) -> CalendarEventResponse:
+    """Add a proposal to the user's calendar.
+
+    This endpoint currently validates that the proposal exists and that the
+    authenticated user belongs to the proposal's group, then returns a mocked
+    success payload. It is the integration point for the future Google Calendar
+    implementation that will create a real calendar event from the proposal's
+    title, time window, location, and participant context.
+    """
     proposal = proposal_by_id(proposal_id)
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
