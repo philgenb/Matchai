@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     frontend_calendar_error_url: str = "http://localhost:5173/onboarding?calendar=error"
 
     gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
     google_places_api_key: str | None = None
     google_places_region: str | None = None
     google_places_language_code: str = "en"

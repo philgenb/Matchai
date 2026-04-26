@@ -1,4 +1,6 @@
 from datetime import UTC, datetime, timedelta
+import json
+import logging
 
 import httpx
 
@@ -9,6 +11,44 @@ from app.services.calendar import get_busy_windows
 from app.services.places import search_place
 from app.settings import settings
 from app.storage import new_id, now_iso
+
+logger = logging.getLogger(__name__)
+
+
+def _gemini_text(prompt: str) -> str:
+    if not settings.gemini_api_key:
+        return ""
+
+    tried_models: list[str] = []
+    for model in [settings.gemini_model, "gemini-2.5-flash", "gemini-flash-latest"]:
+        if model in tried_models:
+            continue
+        tried_models.append(model)
+        try:
+            response = httpx.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                params={"key": settings.gemini_api_key},
+                json={
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"responseMimeType": "application/json"},
+                },
+                timeout=12,
+            )
+            if response.status_code >= 400:
+                logger.warning("Gemini model failed: model=%s status=%s", model, response.status_code)
+                continue
+            return (
+                response.json()
+                .get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [{}])[0]
+                .get("text", "")
+                .strip()
+            )
+        except httpx.HTTPError as error:
+            logger.warning("Gemini model error: model=%s error=%s", model, error.__class__.__name__)
+            continue
+    return ""
 
 
 def _candidate_slots() -> list[tuple[str, str]]:
@@ -62,40 +102,57 @@ def _mock_venue(city: str | None, interests: list[str]) -> VenueCandidate:
     )
 
 
-def _generate_ai_summary(group_name: str, venue: VenueCandidate, interests: list[str]) -> tuple[str, str]:
+def _generate_ai_summary(
+    group_name: str,
+    venue: VenueCandidate,
+    interests: list[str],
+    member_names: list[str],
+) -> tuple[str, str]:
     default_summary = f"Meet at {venue.name} for a relaxed {', '.join(interests[:3])} hangout."
     default_rationale = "Chosen from shared interests, mock availability, and the group's preferred location signals."
 
     if not settings.gemini_api_key:
+        logger.info("Gemini fallback: missing GEMINI_API_KEY")
         return default_summary, default_rationale
 
+    members_line = ", ".join(member_names[:6]) if member_names else "friends from the group"
+    interest_line = ", ".join(interests[:5]) if interests else "food and socializing"
     prompt = (
-        "Create one concise meetup proposal for a friend group. "
-        f"Group: {group_name}. Venue: {venue.name}, {venue.address}. "
-        f"Shared interests: {', '.join(interests)}. "
-        "Return two short sentences: one summary and one rationale."
+        "Write a fun venue description for a meetup plan.\n"
+        f"Group name: {group_name}\n"
+        f"Joined people ({len(member_names)}): {members_line}\n"
+        f"Shared interests: {interest_line}\n"
+        f"Venue: {venue.name} ({venue.address})\n"
+        'Return valid JSON only with keys: "summary" and "rationale". '
+        "Make both values short and lively."
     )
     try:
-        response = httpx.post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-            params={"key": settings.gemini_api_key},
-            json={"contents": [{"parts": [{"text": prompt}]}]},
-            timeout=8,
-        )
-        response.raise_for_status()
-        text = (
-            response.json()
-            .get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "")
-            .strip()
-        )
+        text = _gemini_text(prompt)
         if not text:
+            logger.warning("Gemini fallback: empty response text")
             return default_summary, default_rationale
-        parts = [part.strip() for part in text.split("\n") if part.strip()]
-        return parts[0], parts[1] if len(parts) > 1 else default_rationale
-    except httpx.HTTPError:
+
+        cleaned = text.strip().strip("`")
+        if cleaned.lower().startswith("json"):
+            cleaned = cleaned[4:].strip()
+
+        try:
+            parsed = json.loads(cleaned)
+            summary = str(parsed.get("summary", "")).strip()
+            rationale = str(parsed.get("rationale", "")).strip()
+            if summary:
+                return summary, rationale or default_rationale
+        except Exception:
+            lines = [part.strip("- ").strip() for part in text.splitlines() if part.strip()]
+            if lines:
+                summary = lines[0]
+                rationale = lines[1] if len(lines) > 1 else default_rationale
+                return summary, rationale
+
+        logger.warning("Gemini fallback: parse failure")
+        return default_summary, default_rationale
+    except httpx.HTTPError as error:
+        logger.warning("Gemini fallback: HTTP error (%s)", error.__class__.__name__)
         return default_summary, default_rationale
 
 
@@ -117,7 +174,8 @@ def create_meeting_proposal(group_id: str) -> MeetingProposal:
     city = next((prefs["home_city"] for prefs in member_preferences if prefs["home_city"]), None)
     venue = search_place(city, interests) or _mock_venue(city, interests)
     starts_at, ends_at = _best_candidate_slot([member.user.id for member in members])
-    summary, rationale = _generate_ai_summary(group["name"], venue, interests)
+    member_names = [member.user.name for member in members if member.user.name]
+    summary, rationale = _generate_ai_summary(group["name"], venue, interests, member_names)
 
     proposal_id = new_id("prp")
     current = now_iso()
