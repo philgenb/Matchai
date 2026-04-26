@@ -1,54 +1,16 @@
 from datetime import UTC, datetime, timedelta
-import json
 import logging
-
-import httpx
 
 from app.firebase import firestore_client
 from app.repositories import group_members, group_ref, proposal_ref, user_preferences
 from app.schemas import MeetingProposal, VenueCandidate
 from app.services.calendar import get_busy_windows
+from app.services.gemini_client import GeminiClient
 from app.services.places import search_place
 from app.settings import settings
 from app.storage import new_id, now_iso
 
 logger = logging.getLogger(__name__)
-
-
-def _gemini_text(prompt: str) -> str:
-    if not settings.gemini_api_key:
-        return ""
-
-    tried_models: list[str] = []
-    for model in [settings.gemini_model, "gemini-2.5-flash", "gemini-flash-latest"]:
-        if model in tried_models:
-            continue
-        tried_models.append(model)
-        try:
-            response = httpx.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-                params={"key": settings.gemini_api_key},
-                json={
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"responseMimeType": "application/json"},
-                },
-                timeout=12,
-            )
-            if response.status_code >= 400:
-                logger.warning("Gemini model failed: model=%s status=%s", model, response.status_code)
-                continue
-            return (
-                response.json()
-                .get("candidates", [{}])[0]
-                .get("content", {})
-                .get("parts", [{}])[0]
-                .get("text", "")
-                .strip()
-            )
-        except httpx.HTTPError as error:
-            logger.warning("Gemini model error: model=%s error=%s", model, error.__class__.__name__)
-            continue
-    return ""
 
 
 def _candidate_slots() -> list[tuple[str, str]]:
@@ -107,6 +69,7 @@ def _generate_ai_summary(
     venue: VenueCandidate,
     interests: list[str],
     member_names: list[str],
+    strict: bool = False,
 ) -> tuple[str, str]:
     default_summary = f"Meet at {venue.name} for a relaxed {', '.join(interests[:3])} hangout."
     default_rationale = "Chosen from shared interests, mock availability, and the group's preferred location signals."
@@ -127,32 +90,20 @@ def _generate_ai_summary(
         "Make both values short and lively."
     )
     try:
-        text = _gemini_text(prompt)
-        if not text:
-            logger.warning("Gemini fallback: empty response text")
-            return default_summary, default_rationale
-
-        cleaned = text.strip().strip("`")
-        if cleaned.lower().startswith("json"):
-            cleaned = cleaned[4:].strip()
-
-        try:
-            parsed = json.loads(cleaned)
-            summary = str(parsed.get("summary", "")).strip()
-            rationale = str(parsed.get("rationale", "")).strip()
-            if summary:
-                return summary, rationale or default_rationale
-        except Exception:
-            lines = [part.strip("- ").strip() for part in text.splitlines() if part.strip()]
-            if lines:
-                summary = lines[0]
-                rationale = lines[1] if len(lines) > 1 else default_rationale
-                return summary, rationale
-
-        logger.warning("Gemini fallback: parse failure")
-        return default_summary, default_rationale
-    except httpx.HTTPError as error:
-        logger.warning("Gemini fallback: HTTP error (%s)", error.__class__.__name__)
+        gemini = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model)
+        result = gemini.generate_json_text(prompt)
+        parsed = gemini.parse_json_object(result.text)
+        summary = str(parsed.get("summary", "")).strip()
+        rationale = str(parsed.get("rationale", "")).strip()
+        if summary:
+            summary = summary[:220]
+            rationale = (rationale or default_rationale)[:320]
+            return summary, rationale or default_rationale
+        raise ValueError("Gemini response missing summary")
+    except Exception as error:
+        logger.warning("Gemini fallback: generation error (%s)", error)
+        if strict:
+            raise
         return default_summary, default_rationale
 
 

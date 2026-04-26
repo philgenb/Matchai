@@ -92,9 +92,17 @@ GOOGLE_PLACES_API_KEY=...
 GOOGLE_PLACES_REGION=de
 GOOGLE_PLACES_LANGUAGE_CODE=en
 GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 Without Google Places or Gemini keys, scheduling still works with mock availability and a deterministic mock venue.
+
+Gemini setup checklist:
+
+- Enable the Google Generative Language API in your GCP project.
+- Keep `GEMINI_API_KEY` in `backend/.env` only (never frontend code).
+- Restrict the Gemini key to the Generative Language API.
+- Restart `uvicorn` after editing `.env`.
 
 Google Places key handling:
 
