@@ -88,11 +88,19 @@ GOOGLE_OAUTH_CLIENT_SECRET=...
 GOOGLE_CALENDAR_REDIRECT_URI=http://127.0.0.1:8000/auth/google/calendar/callback
 FRONTEND_CALENDAR_CONNECTED_URL=http://localhost:5173/onboarding?calendar=connected
 FRONTEND_CALENDAR_ERROR_URL=http://localhost:5173/onboarding?calendar=error
-TAVILY_API_KEY=...
+GOOGLE_PLACES_API_KEY=...
+GOOGLE_PLACES_REGION=de
+GOOGLE_PLACES_LANGUAGE_CODE=en
 GEMINI_API_KEY=...
 ```
 
-Without Tavily or Gemini keys, scheduling still works with mock availability and a deterministic mock venue.
+Without Google Places or Gemini keys, scheduling still works with mock availability and a deterministic mock venue.
+
+Google Places key handling:
+
+- Keep `GOOGLE_PLACES_API_KEY` in backend-only secrets (`backend/.env` locally, secret manager in production).
+- Restrict the key in Google Cloud to Places API only.
+- Add application restrictions (server IPs) where possible.
 
 ## Google Calendar OAuth
 

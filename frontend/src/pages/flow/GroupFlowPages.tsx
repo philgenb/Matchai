@@ -9,11 +9,9 @@ import {
   Clock3,
   LogOut,
   Globe2,
-  Image as ImageIcon,
   Link2,
   LoaderCircle,
   MapPin,
-  Phone,
   UsersRound,
 } from 'lucide-react'
 import matchaiLogo from '../../components/ui/matchai_logo.svg'
@@ -47,7 +45,7 @@ const cafeImage =
 const LAST_GROUP_ID_KEY = 'matchai:lastGroupId'
 const LAST_PROPOSAL_KEY = 'matchai:lastProposal'
 
-function FlowPageShell({ children, showHome = false }: { children: ReactNode; showHome?: boolean }) {
+function FlowPageShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { clearSession } = useAuthSession()
 
@@ -58,32 +56,22 @@ function FlowPageShell({ children, showHome = false }: { children: ReactNode; sh
   }
 
   return (
-    <main className="relative mx-auto min-h-screen max-w-[1728px] overflow-hidden bg-[#f7f7f7] px-[88px] py-[84px]">
+    <main className="relative mx-auto min-h-screen max-w-[1728px] overflow-hidden bg-[#f7f7f7] px-[88px] pb-[24px] pt-[28px]">
       <div className="pointer-events-none absolute -left-[1060px] top-[438px] h-[728px] w-[1385px] rounded-full bg-[radial-gradient(circle,_rgba(180,115,255,0.16)_0%,_rgba(180,115,255,0)_68%)]" />
       <div className="pointer-events-none absolute right-[-920px] top-[308px] h-[997px] w-[1265px] rounded-full bg-[radial-gradient(circle,_rgba(180,115,255,0.12)_0%,_rgba(180,115,255,0)_70%)]" />
       <header className="relative z-10 flex items-start justify-between">
         <Link to="/" aria-label="MatchAI home">
-          <img src={matchaiLogo} alt="" aria-hidden width={69} height={69} className="h-[69px] w-[69px]" />
+          <img src={matchaiLogo} alt="" aria-hidden width={58} height={58} className="h-[58px] w-[58px]" />
         </Link>
         <div className="flex items-center gap-3">
-          {showHome && (
-            <Link
-              to="/"
-              className="flex h-[70px] w-[182px] items-center justify-center rounded-[23px] bg-white shadow-[0_0_32px_rgba(0,0,0,0.08)]"
-            >
-              <span className="flex h-[43px] w-[156px] items-center justify-center rounded-[23px] bg-[#7ca8ff] font-['Outfit',sans-serif] text-[20px] font-bold text-white">
-                Home
-              </span>
-            </Link>
-          )}
           <button
             type="button"
             onClick={handleLogout}
-            className="flex h-[70px] w-[70px] items-center justify-center rounded-[23px] bg-white text-[#303030] shadow-[0_0_32px_rgba(0,0,0,0.08)] transition hover:text-[var(--color-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+            className="flex h-[58px] w-[58px] items-center justify-center rounded-[19px] bg-white text-[#303030] shadow-[0_0_32px_rgba(0,0,0,0.08)] transition hover:text-[var(--color-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
             aria-label="Log out"
             title="Log out"
           >
-            <LogOut size={25} strokeWidth={2.4} />
+            <LogOut size={22} strokeWidth={2.4} />
           </button>
         </div>
       </header>
@@ -92,10 +80,10 @@ function FlowPageShell({ children, showHome = false }: { children: ReactNode; sh
   )
 }
 
-function IconButtonCircle() {
+function IconButtonCircle({ className = '', iconSize = 22 }: { className?: string; iconSize?: number }) {
   return (
-    <span className="inline-flex h-[50px] w-[50px] items-center justify-center rounded-full bg-[rgba(120,54,199,0.34)]">
-      <ArrowUpRight size={22} strokeWidth={2.4} />
+    <span className={`inline-flex items-center justify-center rounded-full bg-[#7D3DC5] ${className || 'h-[50px] w-[50px]'}`}>
+      <ArrowUpRight size={iconSize} strokeWidth={2.4} />
     </span>
   )
 }
@@ -120,6 +108,26 @@ function AvatarStack() {
   )
 }
 
+function WaitingAvatarStack() {
+  return (
+    <div className="relative mx-auto h-[126px] w-[340px]">
+      <div className="absolute left-[26px] top-[11px] h-[78px] w-[78px] rotate-[-9deg] overflow-hidden rounded-[17px] bg-white p-[9px] shadow-[0_14px_34px_rgba(0,0,0,0.14)]">
+        <img src={hannahAvatar} alt="" className="h-full w-full object-contain" />
+      </div>
+      <HannahPill className="z-20 left-[86px] top-[4px] scale-[0.7] origin-top-left" />
+      <div className="absolute left-[158px] top-[22px] h-[92px] w-[78px] rounded-[13px] bg-white p-[16px] shadow-[0_14px_34px_rgba(0,0,0,0.12)]">
+        <span className="mt-1 block h-[11px] w-[38px] rounded-full bg-[#e7e7e7]" />
+        <span className="mt-[12px] block h-[11px] w-[52px] rounded-full bg-[#d8d8d8]" />
+        <span className="mt-[12px] block h-[11px] w-[23px] rounded-full bg-[#d2d2d2]" />
+      </div>
+      <div className="absolute right-[18px] top-[50px] h-[74px] w-[74px] rotate-[9deg] overflow-hidden rounded-[17px] bg-white p-[9px] shadow-[0_14px_34px_rgba(0,0,0,0.14)]">
+        <img src={julianAvatar} alt="" className="h-full w-full object-contain" />
+      </div>
+      <JulianPill className="right-[70px] top-[98px] scale-[0.64] origin-top-right" />
+    </div>
+  )
+}
+
 function Chip({
   label,
   active,
@@ -133,8 +141,10 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`h-[39px] rounded-full px-5 font-['Outfit',sans-serif] text-[15px] font-bold transition ${
-        active ? 'bg-[#e8d1ff] text-[#8650c1]' : 'bg-[#e5e5e5] text-[#666]'
+      className={`min-h-[34px] rounded-full px-5 py-2 font-['Outfit',sans-serif] text-[14px] font-bold transition ${
+        active
+          ? 'bg-[#d9b9ff] text-[#7639b1] hover:bg-[#cfa8fb]'
+          : 'bg-[#d8d8d8] text-[#555] hover:bg-[#c9c9c9] hover:text-[#3e3e3e]'
       }`}
     >
       {label}
@@ -148,34 +158,34 @@ function SkeletonBlock({ className = '' }: { className?: string }) {
 
 function WaitingGroupSkeleton() {
   return (
-    <FlowPageShell showHome>
-      <section className="relative mx-auto mt-[32px] max-w-[1000px] text-center">
+    <FlowPageShell>
+      <section className="relative mx-auto mt-[28px] max-w-[1000px] text-center">
         <div className="pointer-events-none opacity-45 blur-[1px]">
-          <AvatarStack />
+          <WaitingAvatarStack />
         </div>
 
-        <div className="mx-auto mt-[30px] flex max-w-[760px] flex-col items-center gap-[10px]">
-          <SkeletonBlock className="h-[54px] w-[610px] max-w-full rounded-[16px]" />
-          <SkeletonBlock className="h-[34px] w-[280px] max-w-[70%] rounded-[16px]" />
+        <div className="mx-auto mt-[14px] flex max-w-[680px] flex-col items-center gap-[8px]">
+          <SkeletonBlock className="h-[40px] w-[570px] max-w-full rounded-[14px]" />
+          <SkeletonBlock className="h-[24px] w-[250px] max-w-[70%] rounded-[14px]" />
         </div>
 
-        <div className="mx-auto mt-[34px] flex max-w-[820px] flex-col items-center gap-[9px]">
-          <SkeletonBlock className="h-[21px] w-[760px] max-w-full rounded-[9px]" />
-          <SkeletonBlock className="h-[21px] w-[570px] max-w-[82%] rounded-[9px]" />
+        <div className="mx-auto mt-[24px] flex max-w-[720px] flex-col items-center gap-[8px]">
+          <SkeletonBlock className="h-[16px] w-[680px] max-w-full rounded-[8px]" />
+          <SkeletonBlock className="h-[16px] w-[500px] max-w-[82%] rounded-[8px]" />
         </div>
 
-        <div className="mx-auto mt-[42px] flex h-[59px] w-[290px] animate-pulse items-center justify-between rounded-[29px] bg-[#d9c7ef] pl-10 pr-[9px] blur-[0.4px]">
-          <span className="h-[18px] w-[150px] rounded-full bg-[#c6acd9]" />
-          <span className="h-[41px] w-[41px] rounded-full bg-[rgba(120,54,199,0.22)]" />
+        <div className="mx-auto mt-[34px] flex h-[54px] w-[270px] animate-pulse items-center justify-between rounded-[27px] bg-[#d9c7ef] pl-9 pr-[7px] blur-[0.4px]">
+          <span className="h-[15px] w-[140px] rounded-full bg-[#c6acd9]" />
+          <span className="h-[40px] w-[40px] rounded-full bg-[rgba(120,54,199,0.22)]" />
         </div>
-        <SkeletonBlock className="mx-auto mt-4 h-[14px] w-[170px] rounded-[7px]" />
+        <SkeletonBlock className="mx-auto mt-3 h-[12px] w-[160px] rounded-[7px]" />
 
-        <section className="mt-[64px]">
-          <SkeletonBlock className="mx-auto h-[24px] w-[260px] rounded-[8px]" />
-          <div className="mt-[34px] flex justify-center gap-[25px]">
-            <SkeletonBlock className="h-[49px] w-[232px] rounded-[9px]" />
-            <SkeletonBlock className="h-[49px] w-[232px] rounded-[9px]" />
-            <SkeletonBlock className="h-[49px] w-[232px] rounded-[9px]" />
+        <section className="mt-[70px]">
+          <SkeletonBlock className="mx-auto h-[20px] w-[220px] rounded-[8px]" />
+          <div className="mt-[26px] flex flex-wrap justify-center gap-[16px]">
+            <SkeletonBlock className="h-[44px] w-[216px] rounded-[9px]" />
+            <SkeletonBlock className="h-[44px] w-[216px] rounded-[9px]" />
+            <SkeletonBlock className="h-[44px] w-[216px] rounded-[9px]" />
           </div>
         </section>
       </section>
@@ -185,54 +195,54 @@ function WaitingGroupSkeleton() {
 
 function MatchSkeleton() {
   return (
-    <FlowPageShell showHome>
-      <section className="mx-auto mt-[64px] grid max-w-[1200px] grid-cols-[560px_420px] gap-[170px]">
-        <div className="pt-[45px]">
-          <SkeletonBlock className="h-[32px] w-[170px] rounded-[10px]" />
-          <div className="mt-7 space-y-4">
-            <SkeletonBlock className="h-[72px] w-[470px] rounded-[18px]" />
-            <SkeletonBlock className="h-[58px] w-[330px] rounded-[18px]" />
+    <FlowPageShell>
+      <section className="mx-auto mt-[36px] grid max-w-[1080px] grid-cols-[520px_340px] gap-[120px]">
+        <div className="pt-[18px]">
+          <SkeletonBlock className="h-[24px] w-[145px] rounded-[10px]" />
+          <div className="mt-5 space-y-3">
+            <SkeletonBlock className="h-[56px] w-[440px] rounded-[16px]" />
+            <SkeletonBlock className="h-[42px] w-[300px] rounded-[16px]" />
           </div>
-          <div className="mt-[50px] space-y-3">
-            <SkeletonBlock className="h-[26px] w-[560px] rounded-[9px]" />
-            <SkeletonBlock className="h-[26px] w-[500px] rounded-[9px]" />
-            <SkeletonBlock className="h-[26px] w-[390px] rounded-[9px]" />
+          <div className="mt-[30px] space-y-2">
+            <SkeletonBlock className="h-[20px] w-[500px] rounded-[8px]" />
+            <SkeletonBlock className="h-[20px] w-[450px] rounded-[8px]" />
+            <SkeletonBlock className="h-[20px] w-[350px] rounded-[8px]" />
           </div>
 
-          <div className="mt-[72px] w-[500px] overflow-hidden rounded-[14px] border border-[#e3e3e3] bg-white/65 blur-[0.3px]">
+          <div className="mt-[42px] w-[440px] overflow-hidden rounded-[12px] border border-[#e3e3e3] bg-white/65 blur-[0.3px]">
             {['w-[160px]', 'w-[120px]', 'w-[145px]'].map((width, index) => (
-              <div key={width} className={`grid h-[57px] grid-cols-[1fr_1fr] items-center px-8 ${index < 2 ? 'border-b border-[#e9e9e9]' : ''}`}>
-                <SkeletonBlock className="h-[18px] w-[110px] rounded-[8px]" />
-                <SkeletonBlock className={`ml-auto h-[18px] ${width} rounded-[8px]`} />
+              <div key={width} className={`grid h-[48px] grid-cols-[1fr_1fr] items-center px-7 ${index < 2 ? 'border-b border-[#e9e9e9]' : ''}`}>
+                <SkeletonBlock className="h-[15px] w-[100px] rounded-[8px]" />
+                <SkeletonBlock className={`ml-auto h-[15px] ${width} rounded-[8px]`} />
               </div>
             ))}
           </div>
 
-          <div className="mt-[117px] flex items-center gap-6">
-            <div className="flex h-[76px] w-[272px] animate-pulse items-center justify-between rounded-[38px] bg-[#d9c7ef] pl-10 pr-[12px] blur-[0.4px]">
-              <span className="h-[24px] w-[145px] rounded-full bg-[#c6acd9]" />
-              <span className="h-[52px] w-[52px] rounded-full bg-[rgba(120,54,199,0.22)]" />
+          <div className="mt-[56px] flex items-center gap-5">
+            <div className="flex h-[60px] w-[230px] animate-pulse items-center justify-between rounded-[30px] bg-[#d9c7ef] pl-8 pr-[9px] blur-[0.4px]">
+              <span className="h-[19px] w-[125px] rounded-full bg-[#c6acd9]" />
+              <span className="h-[42px] w-[42px] rounded-full bg-[rgba(120,54,199,0.22)]" />
             </div>
             <div className="flex items-center blur-[0.5px]">
-              <span className="z-30 h-[76px] w-[76px] rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]" />
-              <span className="z-20 -ml-4 h-[76px] w-[76px] rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]" />
-              <span className="-ml-4 h-[76px] w-[76px] rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]" />
+              <span className="z-30 h-[58px] w-[58px] rounded-full bg-[#eeeeee]" />
+              <span className="z-20 -ml-4 h-[58px] w-[58px] rounded-full bg-[#eeeeee]" />
+              <span className="-ml-3 h-[34px] w-[34px] rounded-full bg-[#eeeeee]" />
             </div>
           </div>
         </div>
 
-        <aside className="pt-[115px]">
-          <div className="relative h-[366px] w-[367px] animate-pulse overflow-hidden rounded-[13px] bg-[#dedede] blur-[0.6px]">
-            <span className="absolute left-[24px] top-[30px] h-[61px] w-[91px] rounded-[31px] bg-white/80" />
-            <span className="absolute right-[26px] top-[30px] h-[61px] w-[157px] rounded-[31px] bg-white/80" />
+        <aside className="pt-[60px]">
+          <div className="relative h-[300px] w-[300px] animate-pulse overflow-hidden rounded-[12px] bg-[#dedede] blur-[0.6px]">
+            <span className="absolute left-[20px] top-[22px] h-[50px] w-[74px] rounded-[25px] bg-white/80" />
+            <span className="absolute right-[22px] top-[22px] h-[50px] w-[130px] rounded-[25px] bg-white/80" />
           </div>
 
-          <div className="mt-[60px] flex items-center gap-7">
-            <SkeletonBlock className="h-[60px] w-[284px] rounded-[30px]" />
-            <SkeletonBlock className="h-[60px] w-[90px] rounded-[30px]" />
+          <div className="mt-[32px] flex items-center gap-5">
+            <SkeletonBlock className="h-[54px] w-[245px] rounded-[27px]" />
+            <SkeletonBlock className="h-[54px] w-[76px] rounded-[27px]" />
           </div>
 
-          <SkeletonBlock className="mx-auto mt-[107px] h-[18px] w-[310px] rounded-[8px]" />
+          <SkeletonBlock className="mx-auto mt-[50px] h-[15px] w-[280px] rounded-[8px]" />
         </aside>
       </section>
     </FlowPageShell>
@@ -260,7 +270,7 @@ export function OnboardingPage() {
     const calendarErrorReason = new URLSearchParams(location.search).get('reason')
 
     if (calendarResult === 'connected') {
-      setFeedback('Google Calendar connected.')
+      setFeedback('')
       window.history.replaceState({}, '', '/onboarding')
     } else if (calendarResult === 'error') {
       setFeedback(calendarErrorReason ? `Google Calendar connection failed: ${calendarErrorReason}` : 'Google Calendar connection failed. Please try again.')
@@ -351,101 +361,110 @@ export function OnboardingPage() {
     }
   }
 
+  const sortedChips = [...chips].sort((left, right) => Number(liked.includes(right)) - Number(liked.includes(left)))
+
   return (
     <FlowPageShell>
-      <section className="relative mx-auto mt-[35px] h-[741px] w-[1046px] rounded-[32px] border-[2px] border-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.65)] px-[80px] py-[86px] shadow-[0_0_40px_rgba(0,0,0,0.07)] [box-shadow:inset_0_0_16px_rgba(255,255,255,0.8),0_0_40px_rgba(0,0,0,0.07)]">
-        <img src={matchaiLogo} alt="" aria-hidden className="absolute right-[88px] top-[68px] h-[65px] w-[65px]" />
-        <div className="absolute left-[430px] top-[77px]">
-          <div className="relative h-[100px] w-[190px]">
+      <section className="relative mx-auto mt-[10px] h-[592px] w-[932px] rounded-[28px] border-[2px] border-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.65)] px-[58px] py-[52px] shadow-[0_0_40px_rgba(0,0,0,0.07)] [box-shadow:inset_0_0_16px_rgba(255,255,255,0.8),0_0_40px_rgba(0,0,0,0.07)]">
+        <img src={matchaiLogo} alt="" aria-hidden className="absolute right-[58px] top-[48px] h-[56px] w-[56px]" />
+        <div className="absolute left-[284px] top-[52px]">
+          <div className="relative h-[86px] w-[168px]">
             <img
               src={julianAvatar}
               alt=""
-              className="absolute left-[70px] top-[-4px] h-[104px] w-[104px] rotate-[8deg] object-contain drop-shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
+              className="absolute left-[64px] top-[-4px] h-[90px] w-[90px] rotate-[8deg] object-contain drop-shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
             />
-            <JulianPill className="-left-[10px] top-[56px] scale-[0.82] origin-top-left" />
+            <JulianPill className="-left-[10px] top-[48px] scale-[0.72] origin-top-left" />
           </div>
         </div>
 
-        <h1 className="font-['Outfit',sans-serif] text-[45px] font-bold tracking-[-0.99px] text-[#232323]">Set your vibe</h1>
+        <h1 className="font-['Outfit',sans-serif] text-[38px] font-bold tracking-[-0.99px] text-[#232323]">Set your vibe</h1>
 
-        <div className="mt-[44px] grid grid-cols-[286px_378px] gap-[157px]">
+        <div className="mt-[34px] grid grid-cols-[268px_348px] gap-[94px]">
           <div>
-            <p className="mb-5 font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Link Google Calendar</p>
+            <p className="mb-4 font-['Outfit',sans-serif] text-[14px] font-bold text-[#2f2f2f]">Link Google Calendar</p>
             <button
               type="button"
               onClick={connectCalendar}
-              disabled={!backendReady || isLoading || calendarConnected || isConnectingCalendar}
-              className={`flex h-[61px] w-[286px] items-center gap-4 rounded-[13px] px-6 font-['Outfit',sans-serif] text-[17px] font-bold text-[#2f2f2f] disabled:cursor-not-allowed disabled:opacity-50 ${calendarConnected ? 'bg-[#e8d1ff]' : 'bg-[#ededed]'}`}
+              disabled={!backendReady || isLoading || isConnectingCalendar}
+              className={`flex h-[52px] w-[268px] items-center gap-3 rounded-[12px] px-5 font-['Outfit',sans-serif] text-[15px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                calendarConnected
+                  ? 'cursor-default border border-[#d7d7d7] bg-white text-[#303030] hover:bg-[#f1f1f1]'
+                  : 'bg-[#ededed] text-[#2f2f2f] hover:bg-[#dedede]'
+              }`}
             >
-              <img src={googleCalendarIcon} alt="" className="h-[40px] w-[40px] shrink-0" />
-              <span className="whitespace-nowrap">{calendarConnected ? 'Connected' : isConnectingCalendar ? 'Opening...' : 'Google Calendar'}</span>
+              <img src={googleCalendarIcon} alt="" className="h-[34px] w-[34px] shrink-0" />
+              <span className="flex items-center gap-3 whitespace-nowrap text-[14px] font-medium">
+                {calendarConnected ? 'Connected' : isConnectingCalendar ? 'Opening...' : 'Google Calendar'}
+                {calendarConnected && <span className="h-[7px] w-[7px] rounded-full bg-[#1fd66f] shadow-[0_0_0_4px_rgba(31,214,111,0.18)] animate-pulse" aria-hidden />}
+              </span>
             </button>
             {calendarConnected && (
-              <div className="mt-3 flex w-[286px] items-center justify-between gap-3">
-                <p className="min-w-0 truncate font-['Outfit',sans-serif] text-[13px] font-bold text-[#7f7f7f]">
+              <div className="mt-2 flex w-[268px] items-center justify-between gap-3">
+                <p className="min-w-0 truncate font-['Outfit',sans-serif] text-[12px] font-medium text-[#7f7f7f]">
                   {calendarEmail || 'Calendar connected'}
                 </p>
                 <button
                   type="button"
                   onClick={disconnectCalendar}
                   disabled={isDisconnectingCalendar}
-                  className="shrink-0 font-['Outfit',sans-serif] text-[13px] font-bold text-[#8650c1] disabled:opacity-50"
+                  className="shrink-0 font-['Outfit',sans-serif] text-[12px] font-bold text-[#8650c1] disabled:opacity-50"
                 >
                   {isDisconnectingCalendar ? '...' : 'Disconnect'}
                 </button>
               </div>
             )}
           </div>
-          <label className="block">
-            <span className="font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Home City / Location</span>
-            <span className="mt-5 flex h-[61px] w-full items-center rounded-[13px] border border-[rgba(0,0,0,0.1)] bg-white px-6">
-              <MapPin size={25} className="text-[#3d3d3d]" />
-              <span aria-hidden className="mx-6 h-[37px] w-px bg-[#dddddd]" />
+          <label className="block pt-[4px]">
+            <span className="font-['Outfit',sans-serif] text-[14px] font-bold text-[#2f2f2f]">Home City / Location</span>
+            <span className="mt-4 flex h-[52px] w-full items-center rounded-[12px] border border-[rgba(0,0,0,0.1)] bg-white px-5">
+              <MapPin size={22} className="text-[#3d3d3d]" />
+              <span aria-hidden className="mx-5 h-[31px] w-px bg-[#dddddd]" />
               <input
                 value={homeCity}
                 onChange={(event) => setHomeCity(event.target.value)}
-                className="w-full bg-transparent font-['Outfit',sans-serif] text-[22px] font-medium text-[#3e3e3e] outline-none"
+                className="w-full bg-transparent font-['Outfit',sans-serif] text-[14px] font-medium text-[#3e3e3e] outline-none"
               />
             </span>
           </label>
         </div>
 
-        <div className="mx-2 mt-[58px] h-[3px] bg-[#eeeeee]" />
+        <div className="mx-2 mt-[42px] h-[3px] bg-[#eeeeee]" />
 
-        <div className="mt-[41px] px-2">
+        <div className="mt-[30px] px-2">
           <div>
-            <p className="mb-[22px] font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Activities you like 👍</p>
-            <div className="flex w-full flex-wrap gap-x-[10px] gap-y-[10px]">
-              {chips.map((chip) => (
+            <p className="mb-[16px] font-['Outfit',sans-serif] text-[14px] font-bold text-[#2f2f2f]">Activities you like 👍</p>
+            <div className="flex w-full flex-wrap gap-x-[8px] gap-y-[8px]">
+              {sortedChips.map((chip) => (
                 <Chip key={chip} label={chip} active={liked.includes(chip)} onClick={() => toggle(liked, setLiked, chip)} />
               ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-[57px] flex justify-end px-2">
+        <div className="absolute bottom-[46px] right-[46px] flex justify-end px-2">
           <div className="flex flex-col items-end">
-            <div className="relative mb-4 mr-[218px] h-[53px] w-[140px]" aria-hidden>
-              <HannahPill className="left-0 top-0" />
+            <div className="relative mb-3 mr-[210px] h-[39px] w-[101px]" aria-hidden>
+              <HannahPill className="left-0 top-0 scale-[0.72] origin-top-left" />
             </div>
             <button
               type="button"
               disabled={isSaving || !backendReady || isLoading}
               onClick={savePreferences}
-              className="flex h-[59px] w-[237px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-9 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:opacity-60"
+              className="relative flex h-[52px] w-[220px] items-center overflow-hidden rounded-[26px] bg-[var(--color-primary)] pl-8 pr-[64px] font-['Outfit',sans-serif] text-[16px] font-normal text-white transition hover:bg-[#9b5df0] disabled:opacity-60"
             >
-              {isLoading ? 'Loading...' : isSaving ? 'Saving...' : 'Create a group'}
-              <IconButtonCircle />
+              {isLoading ? 'Loading...' : isSaving ? 'Saving...' : 'Set Preferences'}
+              <IconButtonCircle className="absolute right-[7px] top-1/2 h-[38px] w-[38px] -translate-y-1/2" iconSize={17} />
             </button>
-            {feedback && <p className="mt-3 max-w-[280px] text-right font-['Outfit',sans-serif] text-[13px] font-bold text-[#979797]">{feedback}</p>}
+            {feedback && <p className="mt-2 max-w-[280px] text-right font-['Outfit',sans-serif] text-[12px] font-bold text-[#979797]">{feedback}</p>}
           </div>
         </div>
       </section>
 
-      <div className="mt-[56px] flex items-center justify-center gap-[8px]" aria-hidden>
-        <span className="h-[7px] w-[46px] rounded-l-[77px] bg-[var(--color-primary)]" />
-        <span className="h-[7px] w-[46px] bg-[var(--color-primary)]" />
-        <span className="h-[7px] w-[46px] rounded-r-[77px] bg-[#e3e3e3]" />
+      <div className="mt-[24px] flex items-center justify-center gap-[8px] min-[1400px]:mt-[34px]" aria-hidden>
+        <span className="h-[6px] w-[36px] rounded-l-[77px] bg-[var(--color-primary)]" />
+        <span className="h-[6px] w-[36px] bg-[var(--color-primary)]" />
+        <span className="h-[6px] w-[36px] rounded-r-[77px] bg-[#e3e3e3]" />
       </div>
     </FlowPageShell>
   )
@@ -508,94 +527,91 @@ export function CreateGroupPage() {
   }
 
   return (
-    <FlowPageShell showHome>
-      <section className="relative mx-auto mt-[35px] h-[741px] w-[1046px] rounded-[32px] border-[2px] border-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.65)] px-[80px] py-[86px] shadow-[0_0_40px_rgba(0,0,0,0.07)] [box-shadow:inset_0_0_16px_rgba(255,255,255,0.8),0_0_40px_rgba(0,0,0,0.07)]">
-        <img src={matchaiLogo} alt="" aria-hidden className="absolute right-[88px] top-[68px] h-[65px] w-[65px]" />
-        <div className="absolute right-[170px] top-[70px]">
+    <FlowPageShell>
+      <section className="relative mx-auto mt-[10px] h-[592px] w-[932px] rounded-[28px] border-[2px] border-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.65)] px-[58px] py-[52px] shadow-[0_0_40px_rgba(0,0,0,0.07)] [box-shadow:inset_0_0_16px_rgba(255,255,255,0.8),0_0_40px_rgba(0,0,0,0.07)]">
+        <img src={matchaiLogo} alt="" aria-hidden className="absolute right-[58px] top-[48px] h-[56px] w-[56px]" />
+        <div className="absolute right-[120px] top-[48px] scale-[0.72] origin-top-right">
           <AvatarStack />
         </div>
 
-        <div className="max-w-[878px]">
-          <h1 className="font-['Outfit',sans-serif] text-[45px] font-bold tracking-[-0.99px] text-[#232323]">Create a group</h1>
+        <div className="max-w-[816px]">
+          <h1 className="font-['Outfit',sans-serif] text-[38px] font-bold tracking-[-0.99px] text-[#232323]">Create a group</h1>
 
-          <label className="mt-[54px] block w-[378px]">
-            <span className="font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Give your group a name</span>
-            <span className="mt-5 flex h-[61px] w-full items-center rounded-[13px] border border-[rgba(0,0,0,0.1)] bg-white px-6">
-              <UsersRound size={25} className="text-[#3d3d3d]" />
-              <span aria-hidden className="mx-6 h-[37px] w-px bg-[#dddddd]" />
+          <label className="mt-[40px] block w-[348px]">
+            <span className="font-['Outfit',sans-serif] text-[14px] font-bold text-[#2f2f2f]">Give your group a name</span>
+            <span className="mt-4 flex h-[52px] w-full items-center rounded-[12px] border border-[rgba(0,0,0,0.1)] bg-white px-5">
+              <UsersRound size={22} className="text-[#3d3d3d]" />
+              <span aria-hidden className="mx-5 h-[31px] w-px bg-[#dddddd]" />
               <input
                 value={groupName}
                 onChange={(event) => setGroupName(event.target.value)}
                 placeholder="New group"
                 disabled={Boolean(createdGroup)}
-                className="w-full bg-transparent font-['Outfit',sans-serif] text-[22px] font-medium text-[#3e3e3e] outline-none disabled:text-[#7b7b7b]"
+                className="w-full bg-transparent font-['Outfit',sans-serif] text-[14px] font-medium text-[#3e3e3e] outline-none disabled:text-[#7b7b7b]"
               />
             </span>
           </label>
 
-          <div className="mx-2 mt-[47px] h-[3px] bg-[#eeeeee]" />
+          <div className="mx-2 mt-[36px] h-[3px] bg-[#eeeeee]" />
 
-          <h2 className="mt-[41px] font-['Outfit',sans-serif] text-[24px] font-bold tracking-[-0.03em] text-[#303030]">Invite your friends</h2>
-          <div className="mt-[34px] grid grid-cols-[300px_1fr] gap-[80px]">
+          <h2 className="mt-[28px] font-['Outfit',sans-serif] text-[21px] font-bold tracking-[-0.03em] text-[#303030]">Invite your friends</h2>
+          <div className="mt-[24px] grid grid-cols-[260px_1fr] gap-[42px]">
             <div>
-              <p className="mb-[20px] font-['Outfit',sans-serif] text-[16px] font-bold text-[#979797]">Via Link</p>
+              <p className="mb-[14px] font-['Outfit',sans-serif] text-[14px] font-bold text-[#2f2f2f]">Via Link</p>
               <button
                 type="button"
                 disabled={isCreating}
                 onClick={copyInviteLink}
-                className="flex h-[59px] w-[186px] items-center justify-center gap-3 rounded-[16px] bg-[#eef3ff] font-['Outfit',sans-serif] text-[18px] font-bold text-[#7ca8ff] disabled:opacity-60"
+                className="ml-5 flex h-[50px] w-[164px] items-center justify-center gap-3 rounded-[14px] bg-[#eef3ff] font-['Outfit',sans-serif] text-[16px] font-bold text-[#7ca8ff] transition hover:bg-[#dfe9ff] hover:text-[#5f91f0] disabled:opacity-60"
               >
-                <Link2 size={23} />
+                <Link2 size={20} />
                 {isCreating ? 'Creating...' : 'Copy Link'}
               </button>
-              <p className="mt-[32px] max-w-[290px] break-words font-['Outfit',sans-serif] text-[14px] font-bold text-[#c0c4d8]">
+              <p className="mt-[20px] max-w-[250px] break-words font-['Outfit',sans-serif] text-[12px] font-medium text-[#7f7f7f]">
                 {copyStatus || inviteLink || 'Send this link to your friends to plan together.'}
               </p>
             </div>
 
             <div>
-              <p className="mb-[20px] font-['Outfit',sans-serif] text-[16px] font-bold text-[#979797]">Via Email</p>
-              <div className="flex items-center gap-[14px]">
-                <span className="flex h-[61px] w-[370px] items-center rounded-[13px] border border-[rgba(180,115,255,0.25)] bg-white px-5 opacity-70">
-                  <AtSign size={22} className="text-[#3d3d3d]" />
-                  <span aria-hidden className="mx-6 h-[37px] w-px bg-[#dddddd]" />
-                  <span className="font-['Outfit',sans-serif] text-[17px] font-bold text-[#3e3e3e]">mustermann@gmail.com</span>
-                  <CheckCircle2 size={19} className="ml-auto text-[#244c99]" />
+              <p className="mb-[14px] font-['Outfit',sans-serif] text-[14px] font-bold text-[#2f2f2f]">Via Email</p>
+              <div className="flex items-center gap-[12px]">
+                <span className="flex h-[52px] w-[312px] items-center rounded-[12px] border border-[#d7d7d7] bg-white px-5 opacity-80">
+                  <AtSign size={19} className="text-[#3d3d3d]" />
+                  <span aria-hidden className="mx-5 h-[31px] w-px bg-[#dddddd]" />
+                  <span className="font-['Outfit',sans-serif] text-[14px] font-medium text-[#3e3e3e]">mustermann@gmail.com</span>
+                  <CheckCircle2 size={17} className="ml-auto text-[#244c99]" />
                 </span>
                 <button
                   type="button"
                   disabled
-                  className="h-[61px] w-[111px] rounded-[18px] bg-[var(--color-primary)] font-['Outfit',sans-serif] text-[18px] font-bold text-white opacity-60"
+                  className="h-[52px] w-[88px] rounded-[16px] bg-[var(--color-primary)] font-['Outfit',sans-serif] text-[16px] font-normal text-white opacity-60"
                 >
                   Add
                 </button>
               </div>
-              <span className="mt-[12px] inline-flex h-[38px] items-center rounded-[9px] bg-[#f3e8ff] px-4 font-['Outfit',sans-serif] text-[13px] font-bold text-[#9f56f3] opacity-70">
-                johannes@gmail.com
-              </span>
             </div>
           </div>
 
-          <div className="mt-[48px] flex justify-end">
+          <div className="mt-[28px] flex justify-end pb-[18px]">
             <button
               type="button"
               disabled={isCreating}
               onClick={finishGroup}
-              className="flex h-[59px] w-[160px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-8 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:opacity-60"
+              className="relative flex h-[52px] w-[146px] items-center justify-center overflow-hidden rounded-[26px] bg-[var(--color-primary)] px-[50px] font-['Outfit',sans-serif] text-[16px] font-normal text-white transition hover:bg-[#9b5df0] disabled:opacity-60"
             >
               {isCreating ? 'Creating...' : 'Finish'}
-              <IconButtonCircle />
+              <IconButtonCircle className="absolute right-[7px] top-1/2 h-[38px] w-[38px] -translate-y-1/2" iconSize={17} />
             </button>
           </div>
 
-          {error && <p className="mt-4 text-right font-['Outfit',sans-serif] text-[14px] font-bold text-[#979797]">{error}</p>}
+          {error && <p className="mt-3 text-right font-['Outfit',sans-serif] text-[12px] font-bold text-[#979797]">{error}</p>}
         </div>
       </section>
 
-      <div className="mt-[56px] flex items-center justify-center gap-[8px]" aria-hidden>
-        <span className="h-[7px] w-[46px] rounded-l-[77px] bg-[var(--color-primary)]" />
-        <span className="h-[7px] w-[46px] bg-[var(--color-primary)]" />
-        <span className="h-[7px] w-[46px] rounded-r-[77px] bg-[var(--color-primary)]" />
+      <div className="mt-[24px] flex items-center justify-center gap-[8px] min-[1400px]:mt-[34px]" aria-hidden>
+        <span className="h-[6px] w-[36px] rounded-l-[77px] bg-[var(--color-primary)]" />
+        <span className="h-[6px] w-[36px] bg-[var(--color-primary)]" />
+        <span className="h-[6px] w-[36px] rounded-r-[77px] bg-[var(--color-primary)]" />
       </div>
     </FlowPageShell>
   )
@@ -695,7 +711,7 @@ export function WaitingForGroupMatchPage() {
 
   if (!groupDetail) {
     return (
-      <FlowPageShell showHome>
+      <FlowPageShell>
         <section className="mx-auto mt-[220px] max-w-[820px] text-center">
           <h1 className="font-['Outfit',sans-serif] text-[64px] font-bold tracking-[-0.04em] text-[#303030]">
             Group unavailable
@@ -709,13 +725,13 @@ export function WaitingForGroupMatchPage() {
   }
 
   return (
-    <FlowPageShell showHome>
-      <section className="relative mx-auto mt-[32px] max-w-[1000px] text-center">
-        <AvatarStack />
-        <h1 className="mt-[30px] font-['Outfit',sans-serif] text-[56px] font-bold leading-[1.05] tracking-[-0.04em] text-[#303030]">
+    <FlowPageShell>
+      <section className="relative mx-auto mt-[28px] max-w-[1000px] text-center">
+        <WaitingAvatarStack />
+        <h1 className="mt-[14px] font-['Outfit',sans-serif] text-[48px] font-bold leading-[1.04] tracking-[-0.045em] text-[#303030]">
           {matchingStarted ? 'Finding your group match.' : `${groupDetail.name} is all set.`}
         </h1>
-        <p className="mx-auto mt-[34px] max-w-[820px] font-['Geist',sans-serif] text-[21px] font-medium leading-[1.22] tracking-[-0.03em] text-[#979797]">
+        <p className="mx-auto mt-[32px] max-w-[760px] font-['Geist',sans-serif] text-[20px] font-medium leading-[1.24] tracking-[-0.035em] text-[#979797]">
           {matchingStarted
             ? 'We check your calendars, look at your locations, and suggest meetups that match your preferences.'
             : isOwner
@@ -723,10 +739,10 @@ export function WaitingForGroupMatchPage() {
               : 'You joined the group. The creator can start matching when everyone is ready.'}
         </p>
         {matchingStarted ? (
-          <div className="mx-auto mt-[42px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white">
+          <div className="mx-auto mt-[42px] flex h-[54px] w-[270px] items-center justify-between rounded-[27px] bg-[var(--color-primary)] pl-9 pr-[7px] font-['Outfit',sans-serif] text-[16px] font-semibold tracking-[-0.03em] text-white">
             Matching {progress}%
-            <span className="inline-flex h-[41px] w-[41px] items-center justify-center rounded-full bg-[rgba(120,54,199,0.34)]">
-              <LoaderCircle className="animate-spin" size={22} />
+            <span className="inline-flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[rgba(120,54,199,0.34)]">
+              <LoaderCircle className="animate-spin" size={20} />
             </span>
           </div>
         ) : (
@@ -734,26 +750,26 @@ export function WaitingForGroupMatchPage() {
             type="button"
             disabled={!isOwner}
             onClick={startMatching}
-            className="mx-auto mt-[42px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="mx-auto mt-[42px] flex h-[54px] w-[270px] items-center justify-between rounded-[27px] bg-[var(--color-primary)] pl-9 pr-[7px] font-['Outfit',sans-serif] text-[16px] font-semibold tracking-[-0.03em] text-white transition hover:bg-[var(--color-primary-strong)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Find a meeting ASAP
-            <IconButtonCircle />
+            <IconButtonCircle className="h-[40px] w-[40px]" iconSize={19} />
           </button>
         )}
-        <p className="mt-4 font-['Outfit',sans-serif] text-[14px] font-bold text-[#979797]">{statusText}</p>
+        <p className="mt-3 font-['Outfit',sans-serif] text-[12px] font-semibold text-[#979797]">{statusText}</p>
 
-        <section className="mt-[64px]">
-          <h2 className="font-['Outfit',sans-serif] text-[21px] font-bold text-[#303030]">Members of {groupDetail.name}</h2>
-          <div className="mt-[34px] flex justify-center gap-[25px]">
+        <section className="mt-[70px]">
+          <h2 className="font-['Outfit',sans-serif] text-[19px] font-bold tracking-[-0.045em] text-[#303030]">Members of {groupDetail.name}</h2>
+          <div className="mt-[26px] flex flex-wrap justify-center gap-[16px]">
             {groupDetail.participants.map((participant) => (
               <span
                 key={participant.user.id}
-                className={`flex h-[49px] w-[232px] items-center justify-between rounded-[9px] px-6 font-['Outfit',sans-serif] text-[18px] font-bold ${
+                className={`flex h-[44px] w-[216px] items-center justify-between rounded-[9px] px-[20px] font-['Outfit',sans-serif] text-[15px] font-semibold tracking-[-0.02em] ${
                   participant.role === 'owner' ? 'bg-[var(--color-primary)] text-white' : 'bg-[#f1f1f1] text-[#666]'
                 }`}
               >
                 <span className="truncate">{participant.user.email}</span>
-                {participant.role === 'owner' ? <CheckCircle2 size={18} /> : <Clock3 size={19} className="text-[#111]" />}
+                {participant.role === 'owner' ? <CheckCircle2 size={17} /> : <Clock3 size={18} className="text-[#111]" />}
               </span>
             ))}
           </div>
@@ -815,7 +831,7 @@ export function GroupMatchPage() {
 
   if (loadError || !proposal) {
     return (
-      <FlowPageShell showHome>
+      <FlowPageShell>
         <section className="mx-auto mt-[220px] max-w-[820px] text-center">
           <h1 className="font-['Outfit',sans-serif] text-[64px] font-bold tracking-[-0.04em] text-[#303030]">
             Match unavailable
@@ -836,87 +852,104 @@ export function GroupMatchPage() {
 
   const startsAt = new Date(proposal.starts_at)
   const endsAt = new Date(proposal.ends_at)
-  const timeLabel = Number.isNaN(startsAt.getTime())
-    ? '17:00 - 19:30 Uhr'
-    : `${startsAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} - ${endsAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
+  const openStatusLabel =
+    proposal.opens_at ||
+    proposal.opening_hours ||
+    (proposal.open_now === true ? 'Open now' : proposal.open_now === false ? 'Currently closed' : 'Unavailable')
+  const rawPriceLevel =
+    typeof proposal.price_level === 'number'
+      ? proposal.price_level
+      : typeof proposal.priceLevel === 'number'
+        ? proposal.priceLevel
+        : null
+  const priceLevel = Number.isInteger(rawPriceLevel) ? Math.max(0, Math.min(4, rawPriceLevel)) : 0
+  const mapsUrl = proposal.source_url || '#'
+  const websiteUrl = proposal.website_url || ''
 
   return (
-    <FlowPageShell showHome>
-      <section className="mx-auto mt-[64px] grid max-w-[1200px] grid-cols-[560px_420px] gap-[170px]">
-        <div className="pt-[45px]">
-          <p className="font-['Outfit',sans-serif] text-[27px] font-bold tracking-[-0.04em] text-[#b5b5b5]">What about</p>
-          <h1 className="mt-7 font-['Outfit',sans-serif] text-[70px] font-bold leading-[1] tracking-[-0.05em] text-[#303030]">
+    <FlowPageShell>
+      <section className="mx-auto mt-[36px] grid max-w-[1080px] grid-cols-[520px_340px] gap-[120px]">
+        <div className="pt-[18px]">
+          <p className="font-['Outfit',sans-serif] text-[22px] font-bold tracking-[-0.04em] text-[#b5b5b5]">What about</p>
+          <h1 className="mt-5 font-['Outfit',sans-serif] text-[58px] font-bold leading-[0.98] tracking-[-0.05em] text-[#303030]">
             {proposal.location_name}
           </h1>
-          <p className="mt-[50px] max-w-[600px] font-['Geist',sans-serif] text-[21px] font-medium leading-[1.25] tracking-[-0.03em] text-[#979797]">
+          <p className="mt-[30px] max-w-[520px] font-['Geist',sans-serif] text-[18px] font-medium leading-[1.24] tracking-[-0.03em] text-[#979797]">
             {proposal.summary}
           </p>
 
-          <div className="mt-[72px] w-[500px] overflow-hidden rounded-[14px] border border-[#e3e3e3] bg-white font-['Outfit',sans-serif] text-[18px] font-bold text-[#303030]">
-            <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-8">
-              <span>Zeitraum</span>
-              <span className="text-right text-[#858585]">{timeLabel}</span>
+          <div className="mt-[42px] w-[440px] overflow-hidden rounded-[12px] border border-[#e3e3e3] bg-white font-['Outfit',sans-serif] text-[16px] font-bold text-[#303030]">
+            <div className="grid h-[48px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-7">
+              <span>Opened</span>
+              <span className="text-right text-[#858585]">{openStatusLabel}</span>
             </div>
-            <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-8">
-              <span>Preis</span>
-              <span className="flex justify-end gap-2 text-[var(--color-primary)]">
+            <div className="grid h-[48px] grid-cols-[1fr_1fr] items-center px-7">
+              <span>Price</span>
+              <span className="flex justify-end gap-[6px] text-[var(--color-primary)]">
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <CircleDollarSign key={index} size={20} className={index > 2 ? 'opacity-20' : ''} />
+                  <CircleDollarSign key={index} size={18} className={index >= priceLevel ? 'opacity-20' : ''} />
                 ))}
               </span>
             </div>
-            <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center px-8">
-              <span>Vibe</span>
-              <span className="text-right text-[#858585]">{proposal.rationale || 'hektisch, lebendig'}</span>
-            </div>
           </div>
 
-          <div className="mt-[117px] flex items-center gap-6">
+          <div className="mt-[56px] flex items-center gap-5">
             <button
               type="button"
               onClick={countMeIn}
-              className="flex h-[76px] w-[272px] items-center justify-between rounded-[38px] bg-[var(--color-primary)] pl-10 pr-[12px] font-['Outfit',sans-serif] text-[24px] font-bold text-white"
+              className="flex h-[60px] w-[230px] items-center justify-between rounded-[30px] bg-[var(--color-primary)] pl-8 pr-[9px] font-['Outfit',sans-serif] text-[19px] font-bold tracking-[-0.03em] text-white transition hover:bg-[var(--color-primary-strong)]"
             >
               {confirmed ? 'Counted in' : 'Count me in'}
-              <IconButtonCircle />
+              <IconButtonCircle className="h-[42px] w-[42px]" iconSize={19} />
             </button>
             <div className="flex items-center">
-              <span className="z-30 flex h-[76px] w-[76px] items-center justify-center rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
-                <img src={hannahAvatar} alt="" className="h-12 w-12 object-contain" />
-              </span>
-              <span className="z-20 -ml-4 flex h-[76px] w-[76px] items-center justify-center rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
-                <img src={julianAvatar} alt="" className="h-12 w-12 object-contain" />
-              </span>
-              <span className="-ml-4 flex h-[76px] w-[76px] items-center justify-center rounded-full bg-white font-['Outfit',sans-serif] text-[25px] font-bold text-[#858585] shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+              <img src={hannahAvatar} alt="" className="z-30 h-[58px] w-[58px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.08)]" />
+              <img src={julianAvatar} alt="" className="z-20 -ml-4 h-[58px] w-[58px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.08)]" />
+              <span className="-ml-3 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white font-['Outfit',sans-serif] text-[13px] font-bold text-[#858585] shadow-[0_7px_14px_rgba(0,0,0,0.08)]">
                 +2
               </span>
             </div>
           </div>
         </div>
 
-        <aside className="pt-[115px]">
-          <div className="relative h-[366px] w-[367px] overflow-hidden rounded-[13px]">
+        <aside className="pt-[60px]">
+          <div className="relative h-[300px] w-[300px] overflow-hidden rounded-[12px]">
             <img src={proposal.image_url || cafeImage} alt={proposal.location_name} className="h-full w-full object-cover" />
-            <div className="absolute left-[24px] top-[30px] flex h-[61px] w-[91px] items-center justify-center rounded-[31px] bg-white">
-              <img src={googleMapsIcon} alt="" className="h-8 w-8" />
-            </div>
-            <div className="absolute right-[26px] top-[30px] flex h-[61px] w-[157px] items-center justify-center gap-3 rounded-[31px] bg-white font-['Outfit',sans-serif] text-[18px] font-bold text-[#303030]">
-              <ImageIcon size={23} className="text-[#858585]" />
-              Images
-            </div>
-          </div>
-
-          <div className="mt-[60px] flex items-center gap-7">
-            <span className="flex h-[60px] w-[284px] items-center justify-center gap-6 rounded-[30px] bg-[#eeeeee] font-['Outfit',sans-serif] text-[19px] font-bold text-[#747474]">
-              <Phone size={22} className="text-[#303030]" />
-              {proposal.address}
-            </span>
-            <a href={proposal.source_url || '#'} className="flex h-[60px] w-[90px] items-center justify-center rounded-[30px] bg-[#eeeeee]" aria-label="Open source">
-              <Globe2 size={29} className="text-[#303030]" />
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="absolute left-[20px] top-[22px] flex h-[50px] w-[74px] items-center justify-center rounded-[25px] bg-white"
+              aria-label="Open location in Google Maps"
+            >
+              <img src={googleMapsIcon} alt="" className="h-7 w-7" />
             </a>
           </div>
 
-          <p className="mt-[107px] text-center font-['Outfit',sans-serif] text-[17px] font-bold text-[#c0c4d8]">
+          <div className="mt-[32px] flex items-center gap-5">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex min-h-[54px] w-[245px] items-center gap-3 rounded-[27px] bg-[#eeeeee] px-4 py-2 font-['Outfit',sans-serif] text-[14px] font-bold leading-[1.25] text-[#747474]"
+            >
+              <MapPin size={19} className="shrink-0 text-[#303030]" />
+              <span className="min-w-0 break-words">{proposal.address}</span>
+            </a>
+            {websiteUrl ? (
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-[54px] w-[76px] items-center justify-center rounded-[27px] bg-[#eeeeee]"
+                aria-label="Open venue website"
+              >
+                <Globe2 size={25} className="text-[#303030]" />
+              </a>
+            ) : null}
+          </div>
+
+          <p className="mt-[50px] text-center font-['Outfit',sans-serif] text-[14px] font-bold text-[#c0c4d8]">
             {feedback || 'We’ll notify you once everyone has set their availability.'}
           </p>
         </aside>

@@ -48,6 +48,11 @@ class VenueCandidate(BaseModel):
     name: str
     address: str
     source_url: str | None = None
+    image_url: str | None = None
+    website_url: str | None = None
+    price_level: int | None = None
+    opens_at: str | None = None
+    open_now: bool | None = None
 
 
 class MeetingProposal(BaseModel):
@@ -61,6 +66,10 @@ class MeetingProposal(BaseModel):
     address: str
     image_url: str | None = None
     source_url: str | None = None
+    website_url: str | None = None
+    price_level: int | None = None
+    opens_at: str | None = None
+    open_now: bool | None = None
     rationale: str
     status: str
     rsvps: dict[str, str] = Field(default_factory=dict)

@@ -211,8 +211,8 @@ def schedule_group(group_id: str, current_user: dict = Depends(get_or_create_cur
     preferences, a mock availability slot, and either real or fallback venue
     and proposal content.
 
-    If `TAVILY_API_KEY` or `GEMINI_API_KEY` are configured, the planner uses
-    those integrations. Otherwise it creates a deterministic MVP proposal.
+    If `GOOGLE_PLACES_API_KEY` or `GEMINI_API_KEY` are configured, the planner
+    uses those integrations. Otherwise it creates a deterministic MVP proposal.
     The generated proposal is persisted in Firestore and returned immediately.
     """
     require_group_member(group_id, current_user["id"])
