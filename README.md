@@ -20,8 +20,6 @@ Matchai is a social scheduling app that helps friend groups find a good time and
 - Backend: FastAPI, Uvicorn, Pydantic Settings, firebase-admin, google-auth-oauthlib, httpx
 - Local development: Node.js/npm, Python venv, Google Cloud CLI
 
-Unused integrations have been removed from this onboarding.
-
 ## Project Structure
 
 ```text
