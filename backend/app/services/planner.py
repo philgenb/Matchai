@@ -62,18 +62,66 @@ def _mock_venue(city: str | None, interests: list[str]) -> VenueCandidate:
     )
 
 
-def _generate_ai_summary(group_name: str, venue: VenueCandidate, interests: list[str]) -> tuple[str, str]:
-    default_summary = f"Meet at {venue.name} for a relaxed {', '.join(interests[:3])} hangout."
-    default_rationale = "Chosen from shared interests, mock availability, and the group's preferred location signals."
+def _summarize_members(member_names: list[str]) -> str:
+    if not member_names:
+        return "The crew"
+    unique_names: list[str] = []
+    for name in member_names:
+        if name and name not in unique_names:
+            unique_names.append(name)
+    if len(unique_names) == 1:
+        return unique_names[0]
+    if len(unique_names) == 2:
+        return f"{unique_names[0]} and {unique_names[1]}"
+    return f"{unique_names[0]}, {unique_names[1]}, and the crew"
+
+
+def _coerce_single_sentence(text: str) -> str:
+    cleaned = " ".join(text.split()).strip()
+    if not cleaned:
+        return ""
+    sentence_end_positions = [(cleaned.find(mark), mark) for mark in (".", "!", "?") if mark in cleaned]
+    if sentence_end_positions:
+        first_index, first_mark = min(sentence_end_positions, key=lambda item: item[0])
+        first = cleaned[:first_index].strip()
+        return f"{first}{first_mark}" if first else ""
+    return f"{cleaned}."
+
+
+def _fallback_summary(
+    venue: VenueCandidate,
+    interests: list[str],
+    member_names: list[str],
+    location_vibe: str | None,
+) -> str:
+    members_text = _summarize_members(member_names)
+    top_interest = (interests[0] if interests else "hangout").lower()
+    vibe_hint = location_vibe or venue.address.split(",")[0].strip() or "town"
+    return f"{members_text} should hit {venue.name} for a fun {top_interest} vibe around {vibe_hint}."
+
+
+def _generate_ai_summary(
+    group_name: str,
+    venue: VenueCandidate,
+    interests: list[str],
+    member_names: list[str],
+    location_vibe: str | None,
+) -> tuple[str, str]:
+    default_summary = _fallback_summary(venue, interests, member_names, location_vibe)
+    default_rationale = "Chosen from shared interests, availability windows, and the group's location vibe."
 
     if not settings.gemini_api_key:
         return default_summary, default_rationale
 
+    members_context = ", ".join(member_names[:6]) if member_names else "the group"
+    interests_context = ", ".join(interests[:5]) if interests else "general social plans"
+    vibe_context = location_vibe or "their preferred area"
     prompt = (
-        "Create one concise meetup proposal for a friend group. "
-        f"Group: {group_name}. Venue: {venue.name}, {venue.address}. "
-        f"Shared interests: {', '.join(interests)}. "
-        "Return two short sentences: one summary and one rationale."
+        "Write exactly one short, lighthearted meetup sentence (max 20 words). "
+        "No bullets, no quotes, and no second sentence. "
+        f"Group name: {group_name}. Members: {members_context}. "
+        f"Venue: {venue.name}, {venue.address}. "
+        f"Location vibe: {vibe_context}. Shared interests: {interests_context}."
     )
     try:
         response = httpx.post(
@@ -93,8 +141,10 @@ def _generate_ai_summary(group_name: str, venue: VenueCandidate, interests: list
         )
         if not text:
             return default_summary, default_rationale
-        parts = [part.strip() for part in text.split("\n") if part.strip()]
-        return parts[0], parts[1] if len(parts) > 1 else default_rationale
+        summary = _coerce_single_sentence(text)
+        if not summary:
+            return default_summary, default_rationale
+        return summary, default_rationale
     except httpx.HTTPError:
         return default_summary, default_rationale
 
@@ -115,9 +165,11 @@ def create_meeting_proposal(group_id: str) -> MeetingProposal:
         interests = ["Cafe", "Bar", "Restaurant"]
 
     city = next((prefs["home_city"] for prefs in member_preferences if prefs["home_city"]), None)
+    location_vibe = next((prefs["location_label"] for prefs in member_preferences if prefs["location_label"]), city)
+    member_names = [member.user.name for member in members if member.user.name]
     venue = search_place(city, interests) or _mock_venue(city, interests)
     starts_at, ends_at = _best_candidate_slot([member.user.id for member in members])
-    summary, rationale = _generate_ai_summary(group["name"], venue, interests)
+    summary, rationale = _generate_ai_summary(group["name"], venue, interests, member_names, location_vibe)
 
     proposal_id = new_id("prp")
     current = now_iso()
