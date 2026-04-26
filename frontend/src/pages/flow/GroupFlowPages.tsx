@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowUpRight,
   AtSign,
@@ -19,13 +19,29 @@ import {
 import matchaiLogo from '../../components/ui/matchai_logo.svg'
 import googleCalendarIcon from '../../assets/icons/google-calendar-icon.svg'
 import googleMapsIcon from '../../assets/icons/google-maps-icon.svg'
+import { HannahPill, JulianPill } from '../../assets/icons/nametags/NamePill'
 import hannahAvatar from '../../components/ui/hannah_profile_icon.png'
 import julianAvatar from '../../components/ui/julian_profile_icon.png'
 import { api, signOutFrontend } from '../../lib/api'
 import { groupRoute, useAuthSession } from '../../lib/authSession'
 
 const groupId = 'aral-chiller'
-const chips = ['Café', 'Bar', 'Restaurant', 'Brunch', 'Walk', 'Park', 'Club', 'Bowling']
+const chips = [
+  'Café',
+  'Bar',
+  'Restaurant',
+  'Brunch',
+  'Walk',
+  'Park',
+  'Club',
+  'Bowling',
+  'Cinema',
+  'Concert',
+  'Museum',
+  'Picnic',
+  'Sports',
+  'Hiking',
+]
 const cafeImage =
   'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=780&q=80'
 const LAST_GROUP_ID_KEY = 'matchai:lastGroupId'
@@ -87,23 +103,19 @@ function IconButtonCircle() {
 function AvatarStack() {
   return (
     <div className="relative mx-auto h-[170px] w-[430px]">
-      <div className="absolute left-[88px] top-[25px] h-[92px] w-[92px] rotate-[-8deg] overflow-hidden rounded-[22px] bg-white p-3 shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+      <div className="absolute left-[16px] top-[12px] h-[108px] w-[108px] rotate-[-10deg] overflow-hidden rounded-[23px] bg-white p-3 shadow-[0_16px_36px_rgba(0,0,0,0.16)]">
         <img src={hannahAvatar} alt="" className="h-full w-full object-contain" />
       </div>
-      <span className="absolute left-[158px] top-[18px] rounded-full bg-[#b473df] px-6 py-2 font-['Outfit',sans-serif] text-[16px] font-medium text-white">
-        Hannah
-      </span>
-      <div className="absolute left-[250px] top-[40px] h-[125px] w-[104px] rounded-[16px] bg-white p-5 shadow-[0_12px_32px_rgba(0,0,0,0.09)]">
-        <span className="block h-4 w-12 rounded-full bg-[#e7e7e7]" />
+      <HannahPill className="z-20 left-[84px] top-[5px] scale-[0.92] origin-top-left" />
+      <div className="absolute left-[172px] top-[18px] h-[126px] w-[102px] rounded-[16px] bg-white p-5 shadow-[0_16px_36px_rgba(0,0,0,0.14)]">
+        <span className="mt-1 block h-4 w-12 rounded-full bg-[#e7e7e7]" />
         <span className="mt-4 block h-4 w-16 rounded-full bg-[#d8d8d8]" />
         <span className="mt-4 block h-4 w-7 rounded-full bg-[#d2d2d2]" />
       </div>
-      <div className="absolute right-[6px] top-[73px] h-[90px] w-[90px] rotate-[10deg] overflow-hidden rounded-[22px] bg-white p-3 shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+      <div className="absolute right-[7px] top-[69px] h-[102px] w-[102px] rotate-[9deg] overflow-hidden rounded-[23px] bg-white p-3 shadow-[0_16px_36px_rgba(0,0,0,0.16)]">
         <img src={julianAvatar} alt="" className="h-full w-full object-contain" />
       </div>
-      <span className="absolute right-[80px] top-[146px] rounded-full bg-[#7ca8ff] px-7 py-2 font-['Outfit',sans-serif] text-[16px] font-medium text-white">
-        Julian
-      </span>
+      <JulianPill className="right-[67px] top-[118px] scale-[0.86] origin-top-right" />
     </div>
   )
 }
@@ -130,47 +142,140 @@ function Chip({
   )
 }
 
-function LocationInput({ className = '' }: { className?: string }) {
-  const [city, setCity] = useState('Munich')
+function SkeletonBlock({ className = '' }: { className?: string }) {
+  return <span className={`block animate-pulse rounded-full bg-[#e4e4e4] blur-[0.6px] ${className}`} />
+}
 
+function WaitingGroupSkeleton() {
   return (
-    <label className={`block ${className}`}>
-      <span className="font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Home City / Location</span>
-      <span className="mt-5 flex h-[61px] w-full items-center rounded-[13px] border border-[rgba(0,0,0,0.1)] bg-white px-6">
-        <MapPin size={25} className="text-[#3d3d3d]" />
-        <span aria-hidden className="mx-6 h-[37px] w-px bg-[#dddddd]" />
-        <input
-          value={city}
-          onChange={(event) => setCity(event.target.value)}
-          className="w-full bg-transparent font-['Outfit',sans-serif] text-[22px] font-medium text-[#3e3e3e] outline-none"
-        />
-      </span>
-    </label>
+    <FlowPageShell showHome>
+      <section className="relative mx-auto mt-[32px] max-w-[1000px] text-center">
+        <div className="pointer-events-none opacity-45 blur-[1px]">
+          <AvatarStack />
+        </div>
+
+        <div className="mx-auto mt-[30px] flex max-w-[760px] flex-col items-center gap-[10px]">
+          <SkeletonBlock className="h-[54px] w-[610px] max-w-full rounded-[16px]" />
+          <SkeletonBlock className="h-[34px] w-[280px] max-w-[70%] rounded-[16px]" />
+        </div>
+
+        <div className="mx-auto mt-[34px] flex max-w-[820px] flex-col items-center gap-[9px]">
+          <SkeletonBlock className="h-[21px] w-[760px] max-w-full rounded-[9px]" />
+          <SkeletonBlock className="h-[21px] w-[570px] max-w-[82%] rounded-[9px]" />
+        </div>
+
+        <div className="mx-auto mt-[42px] flex h-[59px] w-[290px] animate-pulse items-center justify-between rounded-[29px] bg-[#d9c7ef] pl-10 pr-[9px] blur-[0.4px]">
+          <span className="h-[18px] w-[150px] rounded-full bg-[#c6acd9]" />
+          <span className="h-[41px] w-[41px] rounded-full bg-[rgba(120,54,199,0.22)]" />
+        </div>
+        <SkeletonBlock className="mx-auto mt-4 h-[14px] w-[170px] rounded-[7px]" />
+
+        <section className="mt-[64px]">
+          <SkeletonBlock className="mx-auto h-[24px] w-[260px] rounded-[8px]" />
+          <div className="mt-[34px] flex justify-center gap-[25px]">
+            <SkeletonBlock className="h-[49px] w-[232px] rounded-[9px]" />
+            <SkeletonBlock className="h-[49px] w-[232px] rounded-[9px]" />
+            <SkeletonBlock className="h-[49px] w-[232px] rounded-[9px]" />
+          </div>
+        </section>
+      </section>
+    </FlowPageShell>
+  )
+}
+
+function MatchSkeleton() {
+  return (
+    <FlowPageShell showHome>
+      <section className="mx-auto mt-[64px] grid max-w-[1200px] grid-cols-[560px_420px] gap-[170px]">
+        <div className="pt-[45px]">
+          <SkeletonBlock className="h-[32px] w-[170px] rounded-[10px]" />
+          <div className="mt-7 space-y-4">
+            <SkeletonBlock className="h-[72px] w-[470px] rounded-[18px]" />
+            <SkeletonBlock className="h-[58px] w-[330px] rounded-[18px]" />
+          </div>
+          <div className="mt-[50px] space-y-3">
+            <SkeletonBlock className="h-[26px] w-[560px] rounded-[9px]" />
+            <SkeletonBlock className="h-[26px] w-[500px] rounded-[9px]" />
+            <SkeletonBlock className="h-[26px] w-[390px] rounded-[9px]" />
+          </div>
+
+          <div className="mt-[72px] w-[500px] overflow-hidden rounded-[14px] border border-[#e3e3e3] bg-white/65 blur-[0.3px]">
+            {['w-[160px]', 'w-[120px]', 'w-[145px]'].map((width, index) => (
+              <div key={width} className={`grid h-[57px] grid-cols-[1fr_1fr] items-center px-8 ${index < 2 ? 'border-b border-[#e9e9e9]' : ''}`}>
+                <SkeletonBlock className="h-[18px] w-[110px] rounded-[8px]" />
+                <SkeletonBlock className={`ml-auto h-[18px] ${width} rounded-[8px]`} />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-[117px] flex items-center gap-6">
+            <div className="flex h-[76px] w-[272px] animate-pulse items-center justify-between rounded-[38px] bg-[#d9c7ef] pl-10 pr-[12px] blur-[0.4px]">
+              <span className="h-[24px] w-[145px] rounded-full bg-[#c6acd9]" />
+              <span className="h-[52px] w-[52px] rounded-full bg-[rgba(120,54,199,0.22)]" />
+            </div>
+            <div className="flex items-center blur-[0.5px]">
+              <span className="z-30 h-[76px] w-[76px] rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]" />
+              <span className="z-20 -ml-4 h-[76px] w-[76px] rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]" />
+              <span className="-ml-4 h-[76px] w-[76px] rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]" />
+            </div>
+          </div>
+        </div>
+
+        <aside className="pt-[115px]">
+          <div className="relative h-[366px] w-[367px] animate-pulse overflow-hidden rounded-[13px] bg-[#dedede] blur-[0.6px]">
+            <span className="absolute left-[24px] top-[30px] h-[61px] w-[91px] rounded-[31px] bg-white/80" />
+            <span className="absolute right-[26px] top-[30px] h-[61px] w-[157px] rounded-[31px] bg-white/80" />
+          </div>
+
+          <div className="mt-[60px] flex items-center gap-7">
+            <SkeletonBlock className="h-[60px] w-[284px] rounded-[30px]" />
+            <SkeletonBlock className="h-[60px] w-[90px] rounded-[30px]" />
+          </div>
+
+          <SkeletonBlock className="mx-auto mt-[107px] h-[18px] w-[310px] rounded-[8px]" />
+        </aside>
+      </section>
+    </FlowPageShell>
   )
 }
 
 export function OnboardingPage() {
   const navigate = useNavigate()
-  const { refreshSession } = useAuthSession()
+  const location = useLocation()
+  const { ensureGroups, refreshSession } = useAuthSession()
   const [liked, setLiked] = useState(['Café', 'Bar'])
-  const [disliked, setDisliked] = useState(['Café', 'Bar'])
   const [homeCity, setHomeCity] = useState('Munich')
   const [calendarConnected, setCalendarConnected] = useState(false)
+  const [calendarEmail, setCalendarEmail] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [backendReady, setBackendReady] = useState(false)
+  const [isConnectingCalendar, setIsConnectingCalendar] = useState(false)
+  const [isDisconnectingCalendar, setIsDisconnectingCalendar] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState('')
 
   useEffect(() => {
     let cancelled = false
+    const calendarResult = new URLSearchParams(location.search).get('calendar')
+    const calendarErrorReason = new URLSearchParams(location.search).get('reason')
+
+    if (calendarResult === 'connected') {
+      setFeedback('Google Calendar connected.')
+      window.history.replaceState({}, '', '/onboarding')
+    } else if (calendarResult === 'error') {
+      setFeedback(calendarErrorReason ? `Google Calendar connection failed: ${calendarErrorReason}` : 'Google Calendar connection failed. Please try again.')
+      window.history.replaceState({}, '', '/onboarding')
+    }
+
     Promise.all([api.me(), api.getPreferences(), api.getCalendarStatus()])
       .then(([, preferences, calendar]) => {
         if (cancelled) return
         setLiked((preferences.interests || []).map((interest: string) => (interest === 'Cafe' ? 'Café' : interest)))
         setHomeCity(preferences.home_city || preferences.location_label || 'Munich')
         setCalendarConnected(Boolean(calendar.connected || preferences.calendar_connected))
+        setCalendarEmail(calendar.google_email || '')
         setBackendReady(true)
-        setFeedback('')
+        if (!calendarResult) setFeedback('')
       })
       .catch((error) => {
         if (cancelled) return
@@ -184,20 +289,43 @@ export function OnboardingPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [location.search])
 
   const toggle = (list: string[], setter: (items: string[]) => void, chip: string) => {
     setter(list.includes(chip) ? list.filter((item) => item !== chip) : [...list, chip])
   }
 
   const connectCalendar = async () => {
-    if (!backendReady) return
+    if (!backendReady || calendarConnected || isConnectingCalendar) return
+    setIsConnectingCalendar(true)
     setFeedback('Opening Google Calendar connection...')
     try {
       const response = await api.connectCalendar()
       window.location.href = response.auth_url
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : 'Calendar connection is not ready yet.')
+      const message = error instanceof Error ? error.message : ''
+      setFeedback(
+        message === 'Google Calendar OAuth is not configured'
+          ? 'Google Calendar setup is missing in the backend .env.'
+          : message || 'Calendar connection is not ready yet.',
+      )
+      setIsConnectingCalendar(false)
+    }
+  }
+
+  const disconnectCalendar = async () => {
+    if (!backendReady || !calendarConnected || isDisconnectingCalendar) return
+    setIsDisconnectingCalendar(true)
+    setFeedback('')
+    try {
+      const calendar = await api.disconnectCalendar()
+      setCalendarConnected(Boolean(calendar.connected))
+      setCalendarEmail(calendar.google_email || '')
+      setFeedback('Google Calendar disconnected.')
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Could not disconnect Google Calendar.')
+    } finally {
+      setIsDisconnectingCalendar(false)
     }
   }
 
@@ -214,8 +342,9 @@ export function OnboardingPage() {
         onboarding_completed: true,
       })
       setIsSaving(false)
-      const session = await refreshSession()
-      navigate(session.groups.length > 0 ? groupRoute(session.groups[0]) : '/groups/new')
+      await refreshSession()
+      const groups = await ensureGroups()
+      navigate(groups.length > 0 ? groupRoute(groups[0]) : '/groups/new')
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Could not save preferences. Please try again.')
       setIsSaving(false)
@@ -228,29 +357,44 @@ export function OnboardingPage() {
         <img src={matchaiLogo} alt="" aria-hidden className="absolute right-[88px] top-[68px] h-[65px] w-[65px]" />
         <div className="absolute left-[430px] top-[77px]">
           <div className="relative h-[100px] w-[190px]">
-            <div className="absolute left-[74px] top-0 h-[86px] w-[86px] rotate-[8deg] overflow-hidden rounded-[22px] bg-white p-3 shadow-[0_10px_28px_rgba(0,0,0,0.12)]">
-              <img src={julianAvatar} alt="" className="h-full w-full object-contain" />
-            </div>
-            <span className="absolute left-0 top-[62px] rounded-full bg-[#7ca8ff] px-7 py-2 font-['Outfit',sans-serif] text-[15px] font-medium text-white">
-              Julian
-            </span>
+            <img
+              src={julianAvatar}
+              alt=""
+              className="absolute left-[70px] top-[-4px] h-[104px] w-[104px] rotate-[8deg] object-contain drop-shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
+            />
+            <JulianPill className="-left-[10px] top-[56px] scale-[0.82] origin-top-left" />
           </div>
         </div>
 
         <h1 className="font-['Outfit',sans-serif] text-[45px] font-bold tracking-[-0.99px] text-[#232323]">Set your vibe</h1>
 
-        <div className="mt-[44px] grid grid-cols-[247px_378px] gap-[196px]">
+        <div className="mt-[44px] grid grid-cols-[286px_378px] gap-[157px]">
           <div>
             <p className="mb-5 font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Link Google Calendar</p>
             <button
               type="button"
               onClick={connectCalendar}
-              disabled={!backendReady || isLoading}
-              className={`flex h-[61px] w-[247px] items-center gap-6 rounded-[13px] px-8 font-['Outfit',sans-serif] text-[17px] font-bold text-[#2f2f2f] disabled:cursor-not-allowed disabled:opacity-50 ${calendarConnected ? 'bg-[#e8d1ff]' : 'bg-[#ededed]'}`}
+              disabled={!backendReady || isLoading || calendarConnected || isConnectingCalendar}
+              className={`flex h-[61px] w-[286px] items-center gap-4 rounded-[13px] px-6 font-['Outfit',sans-serif] text-[17px] font-bold text-[#2f2f2f] disabled:cursor-not-allowed disabled:opacity-50 ${calendarConnected ? 'bg-[#e8d1ff]' : 'bg-[#ededed]'}`}
             >
-              <img src={googleCalendarIcon} alt="" className="h-[28px] w-[28px]" />
-              {calendarConnected ? 'Connected' : 'Google Calendar'}
+              <img src={googleCalendarIcon} alt="" className="h-[40px] w-[40px] shrink-0" />
+              <span className="whitespace-nowrap">{calendarConnected ? 'Connected' : isConnectingCalendar ? 'Opening...' : 'Google Calendar'}</span>
             </button>
+            {calendarConnected && (
+              <div className="mt-3 flex w-[286px] items-center justify-between gap-3">
+                <p className="min-w-0 truncate font-['Outfit',sans-serif] text-[13px] font-bold text-[#7f7f7f]">
+                  {calendarEmail || 'Calendar connected'}
+                </p>
+                <button
+                  type="button"
+                  onClick={disconnectCalendar}
+                  disabled={isDisconnectingCalendar}
+                  className="shrink-0 font-['Outfit',sans-serif] text-[13px] font-bold text-[#8650c1] disabled:opacity-50"
+                >
+                  {isDisconnectingCalendar ? '...' : 'Disconnect'}
+                </button>
+              </div>
+            )}
           </div>
           <label className="block">
             <span className="font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Home City / Location</span>
@@ -268,29 +412,22 @@ export function OnboardingPage() {
 
         <div className="mx-2 mt-[58px] h-[3px] bg-[#eeeeee]" />
 
-        <div className="mt-[41px] grid grid-cols-2 gap-[72px] px-2">
+        <div className="mt-[41px] px-2">
           <div>
             <p className="mb-[22px] font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Activities you like 👍</p>
-            <div className="flex max-w-[380px] flex-wrap gap-x-[10px] gap-y-[10px]">
+            <div className="flex w-full flex-wrap gap-x-[10px] gap-y-[10px]">
               {chips.map((chip) => (
                 <Chip key={chip} label={chip} active={liked.includes(chip)} onClick={() => toggle(liked, setLiked, chip)} />
               ))}
             </div>
           </div>
-          <div>
-            <p className="mb-[22px] font-['Outfit',sans-serif] text-[16px] font-bold text-[#2f2f2f]">Activities you don’t like 👎</p>
-            <div className="flex max-w-[380px] flex-wrap gap-x-[10px] gap-y-[10px]">
-              {chips.map((chip) => (
-                <Chip key={chip} label={chip} active={disliked.includes(chip)} onClick={() => toggle(disliked, setDisliked, chip)} />
-              ))}
-            </div>
-          </div>
         </div>
 
-        <div className="mt-[57px] grid grid-cols-[378px_1fr] items-end gap-[180px] px-2">
-          <LocationInput />
+        <div className="mt-[57px] flex justify-end px-2">
           <div className="flex flex-col items-end">
-            <span className="mb-4 mr-[218px] rounded-full bg-[#b473df] px-6 py-2 font-['Outfit',sans-serif] text-[15px] font-medium text-white">Hannah</span>
+            <div className="relative mb-4 mr-[218px] h-[53px] w-[140px]" aria-hidden>
+              <HannahPill className="left-0 top-0" />
+            </div>
             <button
               type="button"
               disabled={isSaving || !backendReady || isLoading}
@@ -317,7 +454,7 @@ export function OnboardingPage() {
 export function CreateGroupPage() {
   const navigate = useNavigate()
   const { refreshSession } = useAuthSession()
-  const [groupName, setGroupName] = useState('Aral-Chiller')
+  const [groupName, setGroupName] = useState('')
   const [createdGroup, setCreatedGroup] = useState(null)
   const [copyStatus, setCopyStatus] = useState('')
   const [isCreating, setIsCreating] = useState(false)
@@ -333,7 +470,7 @@ export function CreateGroupPage() {
     try {
       await api.me()
       const group = await api.createGroup({
-        name: groupName.trim() || 'Aral-Chiller',
+        name: groupName.trim() || 'New group',
         description: 'We check calendars, locations, and preferences to suggest the best meetup.',
       })
       window.localStorage.setItem(LAST_GROUP_ID_KEY, group.id)
@@ -389,6 +526,7 @@ export function CreateGroupPage() {
               <input
                 value={groupName}
                 onChange={(event) => setGroupName(event.target.value)}
+                placeholder="New group"
                 disabled={Boolean(createdGroup)}
                 className="w-full bg-transparent font-['Outfit',sans-serif] text-[22px] font-medium text-[#3e3e3e] outline-none disabled:text-[#7b7b7b]"
               />
@@ -551,15 +689,19 @@ export function WaitingForGroupMatchPage() {
     groupDetail?.participants?.some((participant) => participant.role === 'owner' && participant.user.id === currentUser?.id),
   )
 
-  if (isLoadingGroup || !groupDetail) {
+  if (isLoadingGroup) {
+    return <WaitingGroupSkeleton />
+  }
+
+  if (!groupDetail) {
     return (
       <FlowPageShell showHome>
         <section className="mx-auto mt-[220px] max-w-[820px] text-center">
           <h1 className="font-['Outfit',sans-serif] text-[64px] font-bold tracking-[-0.04em] text-[#303030]">
-            {isLoadingGroup ? 'Loading group...' : 'Group unavailable'}
+            Group unavailable
           </h1>
           <p className="mx-auto mt-8 max-w-[640px] font-['Geist',sans-serif] text-[24px] font-medium leading-[1.3] tracking-[-0.03em] text-[#979797]">
-            {statusText || 'Fetching your group from the backend.'}
+            {statusText || 'Could not load this group.'}
           </p>
         </section>
       </FlowPageShell>
@@ -568,20 +710,20 @@ export function WaitingForGroupMatchPage() {
 
   return (
     <FlowPageShell showHome>
-      <section className="relative mx-auto mt-[80px] max-w-[1000px] text-center">
+      <section className="relative mx-auto mt-[32px] max-w-[1000px] text-center">
         <AvatarStack />
-        <h1 className="mt-[46px] font-['Outfit',sans-serif] text-[74px] font-bold leading-[1.05] tracking-[-0.04em] text-[#303030]">
+        <h1 className="mt-[30px] font-['Outfit',sans-serif] text-[56px] font-bold leading-[1.05] tracking-[-0.04em] text-[#303030]">
           {matchingStarted ? 'Finding your group match.' : `${groupDetail.name} is all set.`}
         </h1>
-        <p className="mx-auto mt-[56px] max-w-[970px] font-['Geist',sans-serif] text-[27px] font-medium leading-[1.25] tracking-[-0.03em] text-[#979797]">
+        <p className="mx-auto mt-[34px] max-w-[820px] font-['Geist',sans-serif] text-[21px] font-medium leading-[1.22] tracking-[-0.03em] text-[#979797]">
           {matchingStarted
             ? 'We check your calendars, look at your locations, and suggest meetups that match your preferences.'
             : isOwner
-              ? 'Invite your friends, then start matching when you are ready.'
+              ? 'We check your calendars, look at your locations, and suggest meetups that match your preferences. You’ll get a WhatsApp from us, just sit back.'
               : 'You joined the group. The creator can start matching when everyone is ready.'}
         </p>
         {matchingStarted ? (
-          <div className="mx-auto mt-[68px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white">
+          <div className="mx-auto mt-[42px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white">
             Matching {progress}%
             <span className="inline-flex h-[41px] w-[41px] items-center justify-center rounded-full bg-[rgba(120,54,199,0.34)]">
               <LoaderCircle className="animate-spin" size={22} />
@@ -592,7 +734,7 @@ export function WaitingForGroupMatchPage() {
             type="button"
             disabled={!isOwner}
             onClick={startMatching}
-            className="mx-auto mt-[68px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="mx-auto mt-[42px] flex h-[59px] w-[290px] items-center justify-between rounded-[29px] bg-[var(--color-primary)] pl-10 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             Find a meeting ASAP
             <IconButtonCircle />
@@ -600,7 +742,7 @@ export function WaitingForGroupMatchPage() {
         )}
         <p className="mt-4 font-['Outfit',sans-serif] text-[14px] font-bold text-[#979797]">{statusText}</p>
 
-        <section className="mt-[118px]">
+        <section className="mt-[64px]">
           <h2 className="font-['Outfit',sans-serif] text-[21px] font-bold text-[#303030]">Members of {groupDetail.name}</h2>
           <div className="mt-[34px] flex justify-center gap-[25px]">
             {groupDetail.participants.map((participant) => (
@@ -667,24 +809,26 @@ export function GroupMatchPage() {
     }
   }
 
-  if (isLoadingProposal || loadError || !proposal) {
+  if (isLoadingProposal) {
+    return <MatchSkeleton />
+  }
+
+  if (loadError || !proposal) {
     return (
       <FlowPageShell showHome>
         <section className="mx-auto mt-[220px] max-w-[820px] text-center">
           <h1 className="font-['Outfit',sans-serif] text-[64px] font-bold tracking-[-0.04em] text-[#303030]">
-            {isLoadingProposal ? 'Loading match...' : 'Match unavailable'}
+            Match unavailable
           </h1>
           <p className="mx-auto mt-8 max-w-[640px] font-['Geist',sans-serif] text-[24px] font-medium leading-[1.3] tracking-[-0.03em] text-[#979797]">
-            {isLoadingProposal ? 'Fetching the proposal from the backend.' : loadError}
+            {loadError}
           </p>
-          {!isLoadingProposal && (
-            <Link
-              to="/groups/new"
-              className="mx-auto mt-12 flex h-[59px] w-[250px] items-center justify-center rounded-[29px] bg-[var(--color-primary)] font-['Outfit',sans-serif] text-[18px] font-bold text-white"
-            >
-              Back to group
-            </Link>
-          )}
+          <Link
+            to="/groups/new"
+            className="mx-auto mt-12 flex h-[59px] w-[250px] items-center justify-center rounded-[29px] bg-[var(--color-primary)] font-['Outfit',sans-serif] text-[18px] font-bold text-white"
+          >
+            Back to group
+          </Link>
         </section>
       </FlowPageShell>
     )

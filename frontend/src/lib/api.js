@@ -76,6 +76,10 @@ export const api = {
     }),
   getCalendarStatus: () => request('/users/me/calendar/status'),
   connectCalendar: () => request('/users/me/calendar/connect'),
+  disconnectCalendar: () =>
+    request('/users/me/calendar', {
+      method: 'DELETE',
+    }),
   listGroups: () => request('/groups'),
   createGroup: (group) =>
     request('/groups', {

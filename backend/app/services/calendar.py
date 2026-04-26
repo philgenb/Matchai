@@ -1,6 +1,8 @@
 from datetime import UTC, datetime, timedelta
+import os
 import secrets
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import HTTPException
 from google.auth.transport.requests import Request
@@ -35,6 +37,7 @@ def _require_oauth_settings() -> None:
 
 def _client_config() -> dict[str, Any]:
     _require_oauth_settings()
+    _allow_local_loopback_oauth()
     return {
         "web": {
             "client_id": settings.google_oauth_client_id,
@@ -44,6 +47,12 @@ def _client_config() -> dict[str, Any]:
             "redirect_uris": [settings.google_calendar_redirect_uri],
         }
     }
+
+
+def _allow_local_loopback_oauth() -> None:
+    redirect_uri = urlparse(settings.google_calendar_redirect_uri)
+    if redirect_uri.scheme == "http" and redirect_uri.hostname in {"127.0.0.1", "localhost"}:
+        os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
 
 
 def create_calendar_auth_url(user_id: str) -> str:

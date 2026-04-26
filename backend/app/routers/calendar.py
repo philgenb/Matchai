@@ -1,4 +1,8 @@
+import logging
+from urllib.parse import urlencode
+
 from fastapi import APIRouter, Depends
+from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 
 from app.auth import get_or_create_current_user
@@ -12,6 +16,12 @@ from app.services.calendar import (
 from app.settings import settings
 
 router = APIRouter(tags=["calendar"])
+logger = logging.getLogger(__name__)
+
+
+def _calendar_error_redirect(reason: str) -> RedirectResponse:
+    separator = "&" if "?" in settings.frontend_calendar_error_url else "?"
+    return RedirectResponse(f"{settings.frontend_calendar_error_url}{separator}{urlencode({'reason': reason})}")
 
 
 @router.get("/users/me/calendar/connect", response_model=CalendarConnectResponse)
@@ -42,13 +52,22 @@ def google_calendar_callback(code: str | None = None, state: str | None = None, 
     If Google returns an error or the state/code is missing, the user is
     redirected to the configured frontend error URL.
     """
-    if error or not code or not state:
-        return RedirectResponse(settings.frontend_calendar_error_url)
+    if error:
+        logger.warning("Google Calendar OAuth returned error: %s", error)
+        return _calendar_error_redirect(error)
+
+    if not code or not state:
+        logger.warning("Google Calendar OAuth callback missing code or state")
+        return _calendar_error_redirect("missing_code_or_state")
 
     try:
         exchange_calendar_code(code=code, state=state)
-    except Exception:
-        return RedirectResponse(settings.frontend_calendar_error_url)
+    except HTTPException as exc:
+        logger.exception("Google Calendar OAuth callback failed: %s", exc.detail)
+        return _calendar_error_redirect(str(exc.detail))
+    except Exception as exc:
+        logger.exception("Google Calendar OAuth callback failed")
+        return _calendar_error_redirect(exc.__class__.__name__)
 
     return RedirectResponse(settings.frontend_calendar_connected_url)
 

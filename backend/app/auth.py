@@ -75,18 +75,24 @@ def verify_firebase_token(authorization: str | None = Header(default=None)) -> F
 def get_or_create_current_user(
     firebase_user: FirebaseUser = Depends(verify_firebase_token),
 ) -> dict:
-    from app.repositories import save_user_preferences, user_ref
+    from app.repositories import save_user_preferences, user_preferences, user_ref
 
     current = now_iso()
     ref = user_ref(firebase_user.firebase_uid)
     snapshot = ref.get()
-    created_at = (snapshot.to_dict() or {}).get("created_at") if snapshot.exists else current
+    snapshot_data = snapshot.to_dict() or {}
+    created_at = snapshot_data.get("created_at") if snapshot.exists else current
+    onboarding_completed = bool(snapshot_data.get("onboarding_completed", False))
+    if snapshot.exists and "onboarding_completed" not in snapshot_data:
+        onboarding_completed = bool(user_preferences(firebase_user.firebase_uid).get("onboarding_completed", False))
+
     user = {
         "id": firebase_user.firebase_uid,
         "firebase_uid": firebase_user.firebase_uid,
         "email": firebase_user.email,
         "name": firebase_user.name,
         "profile_image": firebase_user.profile_image,
+        "onboarding_completed": onboarding_completed,
         "created_at": created_at,
         "updated_at": current,
     }

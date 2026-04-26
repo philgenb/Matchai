@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     google_oauth_client_id: str | None = None
     google_oauth_client_secret: str | None = None
     google_calendar_redirect_uri: str = "http://127.0.0.1:8000/auth/google/calendar/callback"
-    frontend_calendar_connected_url: str = "http://localhost:5173/settings?calendar=connected"
-    frontend_calendar_error_url: str = "http://localhost:5173/settings?calendar=error"
+    frontend_calendar_connected_url: str = "http://localhost:5173/onboarding?calendar=connected"
+    frontend_calendar_error_url: str = "http://localhost:5173/onboarding?calendar=error"
 
     tavily_api_key: str | None = None
     gemini_api_key: str | None = None

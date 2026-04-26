@@ -7,6 +7,7 @@ class UserProfile(BaseModel):
     email: str
     name: str
     profile_image: str | None = None
+    onboarding_completed: bool = False
 
 
 class UserPreferences(BaseModel):

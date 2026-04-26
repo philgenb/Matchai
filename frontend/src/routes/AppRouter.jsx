@@ -22,11 +22,15 @@ function PublicOnlyRoute({ children }) {
   return children
 }
 
-function LoadingScreen({ message = 'Loading your MatchAI setup...', error = '' }) {
+function LoadingScreen({ message = 'Loading...', error = '' }) {
   return (
     <main className="grid min-h-screen place-items-center bg-[#f7f7f7] px-6 text-center font-['Outfit',sans-serif]">
       <div>
-        <p className="text-[18px] font-bold text-[#303030]">{error || message}</p>
+        {error ? (
+          <p className="text-[18px] font-bold text-[#303030]">{error}</p>
+        ) : (
+          <div role="status" aria-label={message} className="mx-auto h-[54px] w-[54px] animate-spin rounded-full border-[5px] border-[#e4e4e4] border-t-[var(--color-primary)]" />
+        )}
         {error && <p className="mt-3 max-w-[420px] text-[14px] font-medium text-[#979797]">Please try signing in again.</p>}
       </div>
     </main>
@@ -38,11 +42,17 @@ function homeTarget(groups) {
 }
 
 function AppGate({ children, onboarding = 'completed', blockExistingGroup = false }) {
-  const { ensureSession, error, groups, preferences, status } = useAuthSession()
+  const { ensureGroups, ensureSession, error, groups, groupsStatus, isOnboarded, status } = useAuthSession()
 
   useEffect(() => {
     ensureSession()
   }, [ensureSession])
+
+  useEffect(() => {
+    if (status === 'ready' && isOnboarded && (blockExistingGroup || onboarding === 'incomplete')) {
+      ensureGroups()
+    }
+  }, [blockExistingGroup, ensureGroups, isOnboarded, onboarding, status])
 
   if (!hasFrontendAuthCredential()) {
     return <Navigate to="/" replace />
@@ -52,14 +62,20 @@ function AppGate({ children, onboarding = 'completed', blockExistingGroup = fals
     return <LoadingScreen error={status === 'error' ? error : ''} />
   }
 
-  const onboardingCompleted = Boolean(preferences?.onboarding_completed)
-
-  if (onboarding === 'completed' && !onboardingCompleted) {
+  if (onboarding === 'completed' && !isOnboarded) {
     return <Navigate to="/onboarding" replace />
   }
 
-  if (onboarding === 'incomplete' && onboardingCompleted) {
+  if (onboarding === 'incomplete' && isOnboarded) {
+    if (groupsStatus !== 'ready') {
+      return <LoadingScreen error={groupsStatus === 'error' ? error : ''} />
+    }
+
     return <Navigate to={homeTarget(groups)} replace />
+  }
+
+  if (blockExistingGroup && groupsStatus !== 'ready') {
+    return <LoadingScreen error={groupsStatus === 'error' ? error : ''} />
   }
 
   if (blockExistingGroup && groups.length > 0) {
@@ -70,13 +86,19 @@ function AppGate({ children, onboarding = 'completed', blockExistingGroup = fals
 }
 
 function AuthRedirectPage() {
-  const { ensureSession, error, groups, preferences, refreshSession, status } = useAuthSession()
+  const { ensureGroups, ensureSession, error, groups, groupsStatus, isOnboarded, refreshSession, status } = useAuthSession()
   const [joinTarget, setJoinTarget] = useState('')
   const [joinError, setJoinError] = useState('')
 
   useEffect(() => {
     ensureSession()
   }, [ensureSession])
+
+  useEffect(() => {
+    if (status === 'ready' && isOnboarded && !window.localStorage.getItem(PENDING_JOIN_GROUP_ID_KEY)) {
+      ensureGroups()
+    }
+  }, [ensureGroups, isOnboarded, status])
 
   useEffect(() => {
     if (status !== 'ready' || joinTarget) return
@@ -94,7 +116,7 @@ function AuthRedirectPage() {
         const nextSession = await refreshSession()
         if (cancelled) return
 
-        setJoinTarget(nextSession.preferences?.onboarding_completed ? `/groups/${group.id}/waiting` : '/onboarding')
+        setJoinTarget(nextSession.isOnboarded ? `/groups/${group.id}/waiting` : '/onboarding')
       } catch (caught) {
         if (cancelled) return
         setJoinError(caught instanceof Error ? caught.message : 'Could not join this group.')
@@ -125,8 +147,12 @@ function AuthRedirectPage() {
     return <LoadingScreen error={status === 'error' ? error : ''} />
   }
 
-  if (!preferences?.onboarding_completed) {
+  if (!isOnboarded) {
     return <Navigate to="/onboarding" replace />
+  }
+
+  if (groupsStatus !== 'ready') {
+    return <LoadingScreen error={groupsStatus === 'error' ? error : ''} />
   }
 
   return <Navigate to={homeTarget(groups)} replace />
@@ -156,7 +182,7 @@ function JoinGroupPage() {
         const nextSession = await refreshSession()
         if (cancelled) return
 
-        navigate(nextSession.preferences?.onboarding_completed ? `/groups/${group.id}/waiting` : '/onboarding', { replace: true })
+        navigate(nextSession.isOnboarded ? `/groups/${group.id}/waiting` : '/onboarding', { replace: true })
       } catch (caught) {
         if (!cancelled) {
           setError(caught instanceof Error ? caught.message : 'Could not join this group.')

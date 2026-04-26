@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.auth import get_or_create_current_user
-from app.repositories import save_user_preferences, user_preferences
+from app.repositories import save_user_preferences, user_preferences, user_ref
 from app.schemas import UserPreferences, UserProfile
 
 router = APIRouter(tags=["users"])
@@ -47,4 +47,5 @@ def save_preferences(
     availability window, search for venues, and generate a meetup proposal.
     """
     save_user_preferences(current_user["id"], preferences.model_dump())
+    user_ref(current_user["id"]).set({"onboarding_completed": preferences.onboarding_completed}, merge=True)
     return preferences

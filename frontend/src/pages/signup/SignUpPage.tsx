@@ -149,7 +149,7 @@ function SocialIconButton({ icon, label, onClick }: { icon: string; label: strin
 
 function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
   const navigate = useNavigate()
-  const { refreshSession } = useAuthSession()
+  const { ensureGroups, refreshSession } = useAuthSession()
   const [mode, setMode] = useState<FormMode>(initialMode)
   const [activeField, setActiveField] = useState<FieldName | null>('name')
   const [showPassword, setShowPassword] = useState(false)
@@ -164,18 +164,19 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
     confirmPassword: '',
   })
 
-  const navigateAfterAuth = (session) => {
+  const navigateAfterAuth = async (session) => {
     if (window.localStorage.getItem('matchai:pendingJoinGroupId')) {
       navigate('/app')
       return
     }
 
-    if (!session.preferences?.onboarding_completed) {
+    if (!session.isOnboarded) {
       navigate('/onboarding')
       return
     }
 
-    navigate(session.groups.length > 0 ? groupRoute(session.groups[0]) : '/groups/new')
+    const groups = await ensureGroups()
+    navigate(groups.length > 0 ? groupRoute(groups[0]) : '/groups/new')
   }
 
   useEffect(() => {
@@ -227,7 +228,7 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
       await api.me()
       const session = await refreshSession()
       setSubmitStatus('success')
-      navigateAfterAuth(session)
+      await navigateAfterAuth(session)
     }
 
     authenticate().catch((error) => {
@@ -252,7 +253,7 @@ function SignUpPage({ initialMode = 'signup' }: { initialMode?: FormMode }) {
       }
       await api.me()
       const session = await refreshSession()
-      navigateAfterAuth(session)
+      await navigateAfterAuth(session)
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Sign in failed.')
     }

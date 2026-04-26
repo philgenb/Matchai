@@ -6,8 +6,11 @@ const AuthSessionContext = createContext(null)
 
 const initialState = {
   status: 'idle',
+  user: null,
+  isOnboarded: false,
   preferences: null,
   groups: [],
+  groupsStatus: 'idle',
   error: '',
 }
 
@@ -47,11 +50,14 @@ export function AuthSessionProvider({ children }) {
     setSessionState((current) => ({ ...current, status: 'loading', error: '' }))
 
     inFlightRequestRef.current = (async () => {
-      const [preferences, groups] = await Promise.all([api.getPreferences(), api.listGroups()])
+      const user = await api.me()
       const nextState = {
         status: 'ready',
-        preferences,
-        groups,
+        user,
+        isOnboarded: Boolean(user.onboarding_completed),
+        preferences: { onboarding_completed: Boolean(user.onboarding_completed) },
+        groups: [],
+        groupsStatus: 'idle',
         error: '',
       }
       setSessionState(nextState)
@@ -60,8 +66,11 @@ export function AuthSessionProvider({ children }) {
       .catch((caught) => {
         const nextState = {
           status: 'error',
+          user: null,
+          isOnboarded: false,
           preferences: null,
           groups: [],
+          groupsStatus: 'idle',
           error: caught instanceof Error ? caught.message : 'Could not load your profile.',
         }
         setSessionState(nextState)
@@ -93,14 +102,48 @@ export function AuthSessionProvider({ children }) {
     return refreshSession()
   }, [refreshSession, setSessionState])
 
+  const ensureGroups = useCallback(async () => {
+    if (!hasFrontendAuthCredential()) {
+      setSessionState(initialState)
+      return []
+    }
+
+    const session = stateRef.current.status === 'ready' ? stateRef.current : await ensureSession()
+    if (session.status !== 'ready' || !session.isOnboarded) {
+      return []
+    }
+
+    const currentState = stateRef.current
+    if (currentState.groupsStatus === 'ready') {
+      return currentState.groups
+    }
+
+    setSessionState((current) => ({ ...current, groupsStatus: 'loading', error: '' }))
+
+    try {
+      const groups = await api.listGroups()
+      setSessionState((current) => ({ ...current, groups, groupsStatus: 'ready', error: '' }))
+      return groups
+    } catch (caught) {
+      setSessionState((current) => ({
+        ...current,
+        groups: [],
+        groupsStatus: 'error',
+        error: caught instanceof Error ? caught.message : 'Could not load your groups.',
+      }))
+      return []
+    }
+  }, [ensureSession, setSessionState])
+
   const value = useMemo(
     () => ({
       ...state,
       clearSession,
+      ensureGroups,
       ensureSession,
       refreshSession,
     }),
-    [clearSession, ensureSession, refreshSession, state],
+    [clearSession, ensureGroups, ensureSession, refreshSession, state],
   )
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>

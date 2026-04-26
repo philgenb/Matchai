@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import matchaiLogo from '../../assets/icons/matchai-logo.svg'
-import matchaiMarkInverted from '../../assets/icons/matchai-mark-inverted.svg'
+import matchaiLogo from '../../assets/icons/Logo-top-left.svg?url'
+import matchaiMarkInverted from '../../assets/icons/Logo-footer.svg?url'
+import googleCalendarLogo from '../../assets/icons/google-calendar-icon.svg?url'
+import googleMapsPin from '../../assets/icons/google-maps-icon.svg?url'
+import hannahAvatar from '../../assets/icons/woman_avatar.svg?url'
+import julianAvatar from '../../assets/icons/man_avatar.svg?url'
+import peopleGroup from '../../assets/icons/image-people.svg?url'
 import friendsPicture from '../../assets/images/friends_picture.png'
-import googleCalendarLogo from '../../assets/images/google_calendar_logo.png'
-import googleMapsPin from '../../assets/images/google_maps_pin.png'
-import hannahAvatar from '../../assets/images/hannah_avatar.png'
-import julianAvatar from '../../assets/images/julian_avatar.png'
-import peopleGroup from '../../assets/images/people_group.png'
+
+import { ChristianPill, HannahPill, JulianPill } from '../../assets/icons/nametags/NamePill'
+
 
 const DESIGN_WIDTH = 1728
 const DESIGN_HEIGHT = 3027
@@ -52,24 +55,6 @@ function CtaButton({ children, className = '' }: { children: string; className?:
   )
 }
 
-function NamePill({
-  name,
-  color,
-  className = '',
-}: {
-  name: string
-  color: string
-  className?: string
-}) {
-  return (
-    <span
-      className={`absolute rounded-full px-8 py-[9px] font-['Space_Grotesk',sans-serif] text-[19px] font-medium tracking-[-0.02em] text-white shadow-[0_10px_22px_rgba(0,0,0,0.08)] ${className}`}
-      style={{ backgroundColor: color }}
-    >
-      {name}
-    </span>
-  )
-}
 
 function AvatarTile({
   src,
@@ -112,11 +97,10 @@ function LandingPageCanvas() {
 
   return (
     <main className="relative h-[3027px] w-[1728px] overflow-hidden bg-white">
-      <div className="pointer-events-none absolute left-[176px] top-[-448px] h-[623px] w-[1376px] rounded-full bg-[radial-gradient(circle,_rgba(94,196,80,0.2)_0%,_rgba(163,82,255,0)_70%)]" />
       <div className="pointer-events-none absolute left-[1369px] top-[436px] h-[623px] w-[1376px] rounded-full bg-[radial-gradient(circle,_rgba(163,82,255,0.2)_0%,_rgba(163,82,255,0)_70%)]" />
       <div className="pointer-events-none absolute left-[-965px] top-[463px] h-[623px] w-[1185px] rounded-full bg-[radial-gradient(circle,_rgba(163,82,255,0.2)_0%,_rgba(163,82,255,0)_70%)]" />
 
-      <header className="absolute left-[94px] top-[158px] flex w-[1540px] items-center justify-between">
+      <header className="absolute left-[94px] top-[110px] flex w-[1540px] items-center justify-between">
         <img src={matchaiLogo} alt="MatchAI logo" width={69} height={69} className="h-[69px] w-[69px]" />
         <nav className="flex h-[69px] w-[552px] items-center justify-end rounded-[19px] bg-white px-[13px] shadow-[0_0_35px_rgba(0,0,0,0.12)]" aria-label="Main navigation">
           <div className="flex items-center gap-[33px]">
@@ -140,9 +124,9 @@ function LandingPageCanvas() {
 
       <section className="absolute left-0 top-0 h-[900px] w-full">
         <AvatarTile src={hannahAvatar} alt="Hannah" className="left-[417px] top-[232px] h-[121px] w-[121px] -rotate-[6deg]" imageClassName="h-[78px] w-[78px] -rotate-[2deg]" />
-        <NamePill name="Hannah" color="#b282e5" className="left-[482px] top-[346px]" />
-        <NamePill name="Christian" color="#4868a9" className="left-[405px] top-[669px]" />
-        <NamePill name="Julian" color="#7ca8ff" className="left-[1305px] top-[669px]" />
+        <HannahPill className="left-[482px] top-[346px]" />
+        <ChristianPill className="left-[405px] top-[669px]" />
+        <JulianPill className="left-[1305px] top-[669px]" />
         <AvatarTile src={julianAvatar} alt="Julian" className="left-[1408px] top-[569px] h-[126px] w-[126px] rotate-[9deg]" imageClassName="h-[88px] w-[88px]" />
 
         <h1 className="absolute left-1/2 top-[397px] w-[1376px] -translate-x-1/2 text-center font-['Plus_Jakarta_Sans',sans-serif] text-[88px] font-extrabold leading-[97px] tracking-[-0.03em] text-[#2f2f2f] [text-shadow:0_0_99px_white]">
