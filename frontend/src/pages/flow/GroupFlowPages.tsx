@@ -9,11 +9,9 @@ import {
   Clock3,
   LogOut,
   Globe2,
-  Image as ImageIcon,
   Link2,
   LoaderCircle,
   MapPin,
-  Phone,
   UsersRound,
 } from 'lucide-react'
 import matchaiLogo from '../../components/ui/matchai_logo.svg'
@@ -836,9 +834,19 @@ export function GroupMatchPage() {
 
   const startsAt = new Date(proposal.starts_at)
   const endsAt = new Date(proposal.ends_at)
-  const timeLabel = Number.isNaN(startsAt.getTime())
-    ? '17:00 - 19:30 Uhr'
-    : `${startsAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} - ${endsAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
+  const openStatusLabel =
+    proposal.opens_at ||
+    proposal.opening_hours ||
+    (proposal.open_now === true ? 'Open now' : proposal.open_now === false ? 'Currently closed' : 'Unavailable')
+  const rawPriceLevel =
+    typeof proposal.price_level === 'number'
+      ? proposal.price_level
+      : typeof proposal.priceLevel === 'number'
+        ? proposal.priceLevel
+        : null
+  const priceLevel = Number.isInteger(rawPriceLevel) ? Math.max(0, Math.min(4, rawPriceLevel)) : 0
+  const mapsUrl = proposal.source_url || '#'
+  const websiteUrl = proposal.website_url || ''
 
   return (
     <FlowPageShell showHome>
@@ -854,20 +862,16 @@ export function GroupMatchPage() {
 
           <div className="mt-[72px] w-[500px] overflow-hidden rounded-[14px] border border-[#e3e3e3] bg-white font-['Outfit',sans-serif] text-[18px] font-bold text-[#303030]">
             <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-8">
-              <span>Zeitraum</span>
-              <span className="text-right text-[#858585]">{timeLabel}</span>
-            </div>
-            <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-8">
-              <span>Preis</span>
-              <span className="flex justify-end gap-2 text-[var(--color-primary)]">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <CircleDollarSign key={index} size={20} className={index > 2 ? 'opacity-20' : ''} />
-                ))}
-              </span>
+              <span>Opened</span>
+              <span className="text-right text-[#858585]">{openStatusLabel}</span>
             </div>
             <div className="grid h-[57px] grid-cols-[1fr_1fr] items-center px-8">
-              <span>Vibe</span>
-              <span className="text-right text-[#858585]">{proposal.rationale || 'hektisch, lebendig'}</span>
+              <span>Price</span>
+              <span className="flex justify-end gap-2 text-[var(--color-primary)]">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <CircleDollarSign key={index} size={20} className={index >= priceLevel ? 'opacity-20' : ''} />
+                ))}
+              </span>
             </div>
           </div>
 
@@ -897,23 +901,38 @@ export function GroupMatchPage() {
         <aside className="pt-[115px]">
           <div className="relative h-[366px] w-[367px] overflow-hidden rounded-[13px]">
             <img src={proposal.image_url || cafeImage} alt={proposal.location_name} className="h-full w-full object-cover" />
-            <div className="absolute left-[24px] top-[30px] flex h-[61px] w-[91px] items-center justify-center rounded-[31px] bg-white">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="absolute left-[24px] top-[30px] flex h-[61px] w-[91px] items-center justify-center rounded-[31px] bg-white"
+              aria-label="Open location in Google Maps"
+            >
               <img src={googleMapsIcon} alt="" className="h-8 w-8" />
-            </div>
-            <div className="absolute right-[26px] top-[30px] flex h-[61px] w-[157px] items-center justify-center gap-3 rounded-[31px] bg-white font-['Outfit',sans-serif] text-[18px] font-bold text-[#303030]">
-              <ImageIcon size={23} className="text-[#858585]" />
-              Images
-            </div>
+            </a>
           </div>
 
           <div className="mt-[60px] flex items-center gap-7">
-            <span className="flex h-[60px] w-[284px] items-center justify-center gap-6 rounded-[30px] bg-[#eeeeee] font-['Outfit',sans-serif] text-[19px] font-bold text-[#747474]">
-              <Phone size={22} className="text-[#303030]" />
-              {proposal.address}
-            </span>
-            <a href={proposal.source_url || '#'} className="flex h-[60px] w-[90px] items-center justify-center rounded-[30px] bg-[#eeeeee]" aria-label="Open source">
-              <Globe2 size={29} className="text-[#303030]" />
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex min-h-[72px] w-[300px] items-center gap-4 rounded-[32px] bg-[#eeeeee] px-5 py-3 font-['Outfit',sans-serif] text-[17px] font-bold leading-[1.35] text-[#747474]"
+            >
+              <MapPin size={22} className="shrink-0 text-[#303030]" />
+              <span className="min-w-0 break-words">{proposal.address}</span>
             </a>
+            {websiteUrl ? (
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-[60px] w-[90px] items-center justify-center rounded-[30px] bg-[#eeeeee]"
+                aria-label="Open venue website"
+              >
+                <Globe2 size={29} className="text-[#303030]" />
+              </a>
+            ) : null}
           </div>
 
           <p className="mt-[107px] text-center font-['Outfit',sans-serif] text-[17px] font-bold text-[#c0c4d8]">

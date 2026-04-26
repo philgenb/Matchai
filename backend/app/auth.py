@@ -3,7 +3,7 @@ import json
 
 from fastapi import Depends, Header, HTTPException, status
 
-from app.firebase import init_firebase_app
+from app.firebase import get_firebase_project_id, init_firebase_app
 from app.settings import FirebaseUser, settings
 from app.storage import new_id, now_iso
 
@@ -16,15 +16,16 @@ def _parse_dev_token(token: str) -> FirebaseUser:
 
 
 def _token_payload_hint(token: str) -> str:
+    expected_project = get_firebase_project_id()
     try:
         parts = token.split(".")
         if len(parts) < 2:
             return "token is not a JWT"
         payload = parts[1] + "=" * (-len(parts[1]) % 4)
         decoded = json.loads(base64.urlsafe_b64decode(payload.encode("utf-8")))
-        return f"aud={decoded.get('aud')!r}, iss={decoded.get('iss')!r}, expected_project={settings.firebase_project_id!r}"
+        return f"aud={decoded.get('aud')!r}, iss={decoded.get('iss')!r}, expected_project={expected_project!r}"
     except Exception:
-        return f"could not decode token payload, expected_project={settings.firebase_project_id!r}"
+        return f"could not decode token payload, expected_project={expected_project!r}"
 
 
 def verify_firebase_token(authorization: str | None = Header(default=None)) -> FirebaseUser:
@@ -46,10 +47,10 @@ def verify_firebase_token(authorization: str | None = Header(default=None)) -> F
             detail="Firebase Admin SDK is not installed",
         ) from exc
 
-    init_firebase_app()
+    firebase_app = init_firebase_app()
 
     try:
-        decoded = auth.verify_id_token(token, check_revoked=True)
+        decoded = auth.verify_id_token(token, check_revoked=True, app=firebase_app)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

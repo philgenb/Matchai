@@ -137,6 +137,31 @@ def proposal_from_doc(group_id: str, proposal_id: str, data: dict[str, Any]) -> 
         snapshot.id: (snapshot.to_dict() or {}).get("status")
         for snapshot in proposal_ref(group_id, proposal_id).collection("rsvps").stream()
     }
+    venue = data.get("venue") or {}
+    location_name = venue.get("name") or data.get("location_name") or data.get("name") or "Recommended venue"
+    address = venue.get("address") or data.get("address") or "Address to confirm"
+    image_url = venue.get("image_url") or data.get("image_url")
+    source_url = venue.get("maps_url") or venue.get("source_url") or data.get("source_url") or data.get("maps_url")
+    website_url = venue.get("website_url") or data.get("website_url")
+    if "price_level" in venue:
+        price_level = venue.get("price_level")
+    elif "priceLevel" in venue:
+        price_level = venue.get("priceLevel")
+    elif "price_level" in data:
+        price_level = data.get("price_level")
+    else:
+        price_level = data.get("priceLevel")
+
+    if "opens_at" in venue:
+        opens_at = venue.get("opens_at")
+    elif "opening_hours" in venue:
+        opens_at = venue.get("opening_hours")
+    elif "opens_at" in data:
+        opens_at = data.get("opens_at")
+    else:
+        opens_at = data.get("opening_hours")
+    open_now = venue.get("open_now") if "open_now" in venue else data.get("open_now")
+
     return MeetingProposal(
         id=proposal_id,
         group_id=group_id,
@@ -144,10 +169,14 @@ def proposal_from_doc(group_id: str, proposal_id: str, data: dict[str, Any]) -> 
         summary=data["summary"],
         starts_at=data["starts_at"],
         ends_at=data["ends_at"],
-        location_name=data["location_name"],
-        address=data["address"],
-        image_url=data.get("image_url"),
-        source_url=data.get("source_url"),
+        location_name=location_name,
+        address=address,
+        image_url=image_url,
+        source_url=source_url,
+        website_url=website_url,
+        price_level=price_level,
+        opens_at=opens_at,
+        open_now=open_now,
         rationale=data["rationale"],
         status=data["status"],
         rsvps={user_id: status for user_id, status in rsvps.items() if status},

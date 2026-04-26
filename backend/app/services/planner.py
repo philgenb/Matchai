@@ -6,6 +6,7 @@ from app.firebase import firestore_client
 from app.repositories import group_members, group_ref, proposal_ref, user_preferences
 from app.schemas import MeetingProposal, VenueCandidate
 from app.services.calendar import get_busy_windows
+from app.services.places import search_place
 from app.settings import settings
 from app.storage import new_id, now_iso
 
@@ -53,37 +54,12 @@ def _mock_venue(city: str | None, interests: list[str]) -> VenueCandidate:
         name=f"{top_interest} Social Spot",
         address=f"Central area, {place_city}",
         source_url=None,
+        website_url=None,
+        image_url=None,
+        price_level=2,
+        opens_at=None,
+        open_now=None,
     )
-
-
-def _search_tavily(city: str | None, interests: list[str]) -> VenueCandidate | None:
-    if not settings.tavily_api_key:
-        return None
-
-    query = f"best meetup venue {' '.join(interests[:3])} {city or ''}".strip()
-    try:
-        response = httpx.post(
-            "https://api.tavily.com/search",
-            json={
-                "api_key": settings.tavily_api_key,
-                "query": query,
-                "search_depth": "basic",
-                "max_results": 3,
-            },
-            timeout=8,
-        )
-        response.raise_for_status()
-        results = response.json().get("results", [])
-        if not results:
-            return None
-        first = results[0]
-        return VenueCandidate(
-            name=first.get("title") or "Recommended venue",
-            address=city or "Address to confirm",
-            source_url=first.get("url"),
-        )
-    except httpx.HTTPError:
-        return None
 
 
 def _generate_ai_summary(group_name: str, venue: VenueCandidate, interests: list[str]) -> tuple[str, str]:
@@ -139,21 +115,39 @@ def create_meeting_proposal(group_id: str) -> MeetingProposal:
         interests = ["Cafe", "Bar", "Restaurant"]
 
     city = next((prefs["home_city"] for prefs in member_preferences if prefs["home_city"]), None)
-    venue = _search_tavily(city, interests) or _mock_venue(city, interests)
+    venue = search_place(city, interests) or _mock_venue(city, interests)
     starts_at, ends_at = _best_candidate_slot([member.user.id for member in members])
     summary, rationale = _generate_ai_summary(group["name"], venue, interests)
 
     proposal_id = new_id("prp")
     current = now_iso()
     proposal = {
+        "schema_version": 2,
         "title": f"{group['name']} meetup",
         "summary": summary,
         "starts_at": starts_at,
         "ends_at": ends_at,
+        "venue": {
+            "name": venue.name,
+            "address": venue.address,
+            "image_url": venue.image_url,
+            "maps_url": venue.source_url,
+            "website_url": venue.website_url,
+            "price_level": venue.price_level,
+            "opens_at": venue.opens_at,
+            "opening_hours": venue.opens_at,
+            "open_now": venue.open_now,
+        },
+        # Compatibility mirror for older readers/tools that still expect top-level fields.
         "location_name": venue.name,
         "address": venue.address,
-        "image_url": None,
+        "image_url": venue.image_url,
         "source_url": venue.source_url,
+        "website_url": venue.website_url,
+        "price_level": venue.price_level,
+        "opens_at": venue.opens_at,
+        "opening_hours": venue.opens_at,
+        "open_now": venue.open_now,
         "rationale": rationale,
         "status": "proposal_found",
         "created_at": current,
