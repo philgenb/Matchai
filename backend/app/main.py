@@ -39,7 +39,7 @@ def health_check() -> dict[str, str]:
 
     Load balancers, deployment smoke tests, and local development checks can
     call this endpoint to verify that the API process is alive. It does not
-    check downstream dependencies such as Firestore, Tavily, Gemini, or Google
+    check downstream dependencies such as Firestore, Gemini, or Google
     Calendar.
     """
     return {"status": "ok"}

@@ -20,6 +20,7 @@ import googleMapsIcon from '../../assets/icons/google-maps-icon.svg'
 import { HannahPill, JulianPill } from '../../assets/icons/nametags/NamePill'
 import hannahAvatar from '../../components/ui/hannah_profile_icon.png'
 import julianAvatar from '../../components/ui/julian_profile_icon.png'
+import createGroupSymbol from '../../assets/images/create-a-group-symbol.png'
 import { api, signOutFrontend } from '../../lib/api'
 import { groupRoute, useAuthSession } from '../../lib/authSession'
 
@@ -568,9 +569,12 @@ export function CreateGroupPage() {
     <FlowPageShell>
       <section className="relative mx-auto mt-[10px] h-[592px] w-[932px] rounded-[28px] border-[2px] border-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.65)] px-[58px] py-[52px] shadow-[0_0_40px_rgba(0,0,0,0.07)] [box-shadow:inset_0_0_16px_rgba(255,255,255,0.8),0_0_40px_rgba(0,0,0,0.07)]">
         <img src={matchaiLogo} alt="" aria-hidden className="absolute right-[58px] top-[48px] h-[56px] w-[56px]" />
-        <div className="absolute right-[120px] top-[48px] scale-[0.72] origin-top-right">
-          <AvatarStack />
-        </div>
+        <img
+          src={createGroupSymbol}
+          alt=""
+          aria-hidden
+          className="absolute right-[92px] top-[44px] h-auto w-[262px]"
+        />
 
         <div className="max-w-[816px]">
           <h1 className="font-['Outfit',sans-serif] text-[38px] font-bold tracking-[-0.99px] text-[#232323]">Create a group</h1>
@@ -939,7 +943,7 @@ export function GroupMatchPage() {
             {proposal.summary}
           </p>
 
-          <div className="mt-[42px] w-[440px] overflow-hidden rounded-[12px] border border-[#e3e3e3] bg-white font-['Outfit',sans-serif] text-[16px] font-bold text-[#303030]">
+          <div className="mt-[42px] w-[440px] overflow-hidden rounded-[12px] border border-[#e3e3e3] bg-white font-['Outfit',sans-serif] text-[16px] font-semibold text-[#303030]">
             <div className="grid h-[48px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-7">
               <span>Date</span>
               <span className="whitespace-nowrap text-right text-[#858585]">{meetingWindowLabel}</span>
@@ -969,8 +973,8 @@ export function GroupMatchPage() {
               <IconButtonCircle className="h-[42px] w-[42px]" iconSize={19} />
             </a>
             <div className="flex items-center">
-              <img src={hannahAvatar} alt="" className="z-30 h-[58px] w-[58px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.08)]" />
-              <img src={julianAvatar} alt="" className="z-20 -ml-4 h-[58px] w-[58px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.08)]" />
+              <img src={hannahAvatar} alt="" className="z-30 h-[44px] w-[44px] rounded-full bg-white object-contain p-[3px] shadow-[0_7px_14px_rgba(0,0,0,0.08)]" />
+              <img src={julianAvatar} alt="" className="z-20 -ml-3 h-[44px] w-[44px] rounded-full bg-white object-contain p-[3px] shadow-[0_7px_14px_rgba(0,0,0,0.08)]" />
               <span className="-ml-3 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white font-['Outfit',sans-serif] text-[13px] font-bold text-[#858585] shadow-[0_7px_14px_rgba(0,0,0,0.08)]">
                 +2
               </span>
