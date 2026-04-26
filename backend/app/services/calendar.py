@@ -53,6 +53,7 @@ def _allow_local_loopback_oauth() -> None:
     redirect_uri = urlparse(settings.google_calendar_redirect_uri)
     if redirect_uri.scheme == "http" and redirect_uri.hostname in {"127.0.0.1", "localhost"}:
         os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
+    os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
 
 def create_calendar_auth_url(user_id: str) -> str:
