@@ -2,6 +2,8 @@
 
 Matchai is a social scheduling app that helps friend groups find a good time and place to meet. The app combines user preferences, Google Calendar availability, Google Places venue data, and a short Gemini-generated recommendation.
 
+Demo: https://www.loom.com/share/13fc390c69324ce88f3c11f6396e85a7
+
 ## Technologies Used
 
 ### Product And Partner Technologies
