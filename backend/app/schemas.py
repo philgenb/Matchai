@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -94,6 +96,14 @@ class CalendarStatusResponse(BaseModel):
     google_email: str | None = None
     scopes: list[str] = Field(default_factory=list)
     updated_at: str | None = None
+
+
+class AccessibilityTtsRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=5000)
+    voice_id: str = Field(default="YTpq7expH9539ERJ", min_length=1)
+    output_format: Literal["wav", "pcm", "opus"] = "wav"
+    model_name: str = "default"
+    pronunciation_id: str | None = None
 
 
 GroupDetail.model_rebuild()

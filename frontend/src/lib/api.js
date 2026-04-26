@@ -34,19 +34,24 @@ function endpoint(path) {
   return `${API_BASE_URL}${path}`
 }
 
-async function request(path, options = {}) {
+async function authHeader() {
   const firebaseToken = await getFirebaseIdToken()
   if (firebaseConfigured && !firebaseToken) {
     throw new Error('Please sign in before continuing.')
   }
 
   const authToken = firebaseToken || `dev:${getDevEmail()}`
+  return `Bearer ${authToken}`
+}
+
+async function request(path, options = {}) {
+  const authorization = await authHeader()
 
   const response = await fetch(endpoint(path), {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
+      Authorization: authorization,
       ...(options.headers ?? {}),
     },
   })
@@ -64,6 +69,26 @@ async function request(path, options = {}) {
   }
 
   return response.json()
+}
+
+async function requestPublicAudio(path, body) {
+  const response = await fetch(endpoint(path), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const message = await response
+      .json()
+      .then((payload) => payload.detail || response.statusText)
+      .catch(() => response.statusText)
+    throw new Error(message)
+  }
+
+  return response.blob()
 }
 
 export const api = {
@@ -105,4 +130,5 @@ export const api = {
     request(`/proposals/${proposalId}/add-to-calendar`, {
       method: 'POST',
     }),
+  tts: (payload) => requestPublicAudio('/accessibility/tts', payload),
 }
