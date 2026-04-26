@@ -54,7 +54,11 @@ def _mock_venue(city: str | None, interests: list[str]) -> VenueCandidate:
         name=f"{top_interest} Social Spot",
         address=f"Central area, {place_city}",
         source_url=None,
+        website_url=None,
         image_url=None,
+        price_level=2,
+        opens_at=None,
+        open_now=None,
     )
 
 
@@ -118,14 +122,32 @@ def create_meeting_proposal(group_id: str) -> MeetingProposal:
     proposal_id = new_id("prp")
     current = now_iso()
     proposal = {
+        "schema_version": 2,
         "title": f"{group['name']} meetup",
         "summary": summary,
         "starts_at": starts_at,
         "ends_at": ends_at,
+        "venue": {
+            "name": venue.name,
+            "address": venue.address,
+            "image_url": venue.image_url,
+            "maps_url": venue.source_url,
+            "website_url": venue.website_url,
+            "price_level": venue.price_level,
+            "opens_at": venue.opens_at,
+            "opening_hours": venue.opens_at,
+            "open_now": venue.open_now,
+        },
+        # Compatibility mirror for older readers/tools that still expect top-level fields.
         "location_name": venue.name,
         "address": venue.address,
         "image_url": venue.image_url,
         "source_url": venue.source_url,
+        "website_url": venue.website_url,
+        "price_level": venue.price_level,
+        "opens_at": venue.opens_at,
+        "opening_hours": venue.opens_at,
+        "open_now": venue.open_now,
         "rationale": rationale,
         "status": "proposal_found",
         "created_at": current,
