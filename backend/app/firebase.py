@@ -1,11 +1,35 @@
 from functools import lru_cache
 import json
+import json
 import os
 
 import firebase_admin
 from firebase_admin import credentials, firestore
 
 from app.settings import settings
+
+
+def _project_id_from_service_account(path: str) -> str | None:
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            payload = json.load(file)
+        return payload.get("project_id")
+    except Exception:
+        return None
+
+
+def get_firebase_project_id() -> str | None:
+    return (
+        settings.firebase_project_id
+        or os.getenv("GOOGLE_CLOUD_PROJECT")
+        or os.getenv("GCLOUD_PROJECT")
+        or os.getenv("GOOGLE_CLOUD_QUOTA_PROJECT")
+        or (
+            _project_id_from_service_account(settings.firebase_credentials_path)
+            if settings.firebase_credentials_path
+            else None
+        )
+    )
 
 
 def _project_id_from_service_account(path: str) -> str | None:
