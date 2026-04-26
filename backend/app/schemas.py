@@ -47,6 +47,7 @@ class VenueCandidate(BaseModel):
     name: str
     address: str
     source_url: str | None = None
+    image_url: str | None = None
 
 
 class MeetingProposal(BaseModel):

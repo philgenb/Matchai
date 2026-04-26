@@ -47,10 +47,10 @@ def verify_firebase_token(authorization: str | None = Header(default=None)) -> F
             detail="Firebase Admin SDK is not installed",
         ) from exc
 
-    init_firebase_app()
+    firebase_app = init_firebase_app()
 
     try:
-        decoded = auth.verify_id_token(token, check_revoked=True)
+        decoded = auth.verify_id_token(token, check_revoked=True, app=firebase_app)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

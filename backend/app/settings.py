@@ -21,8 +21,10 @@ class Settings(BaseSettings):
     frontend_calendar_connected_url: str = "http://localhost:5173/settings?calendar=connected"
     frontend_calendar_error_url: str = "http://localhost:5173/settings?calendar=error"
 
-    tavily_api_key: str | None = None
     gemini_api_key: str | None = None
+    google_places_api_key: str | None = None
+    google_places_region: str | None = None
+    google_places_language_code: str = "en"
 
 
 class FirebaseUser(BaseModel):

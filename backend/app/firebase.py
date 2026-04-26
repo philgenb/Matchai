@@ -32,10 +32,15 @@ def get_firebase_project_id() -> str | None:
 
 
 def init_firebase_app() -> firebase_admin.App:
-    if firebase_admin._apps:
-        return firebase_admin.get_app()
-
     resolved_project_id = get_firebase_project_id()
+
+    if firebase_admin._apps:
+        app = firebase_admin.get_app()
+        configured_project = (app.options or {}).get("projectId")
+        # Recover from stale app state where projectId was not configured.
+        if configured_project or not resolved_project_id:
+            return app
+        firebase_admin.delete_app(app)
 
     if resolved_project_id:
         os.environ.setdefault("GOOGLE_CLOUD_PROJECT", resolved_project_id)
