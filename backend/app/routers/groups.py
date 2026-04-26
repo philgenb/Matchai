@@ -22,7 +22,7 @@ from app.schemas import (
     MeetingProposal,
     RsvpCreate,
 )
-from app.services.planner import create_meeting_proposal
+from app.services.planner import CalendarAvailabilityError, create_meeting_proposal
 from app.services.calendar import create_calendar_event
 from app.storage import new_id, new_invite_code, now_iso
 
@@ -216,8 +216,15 @@ def schedule_group(group_id: str, current_user: dict = Depends(get_or_create_cur
     The generated proposal is persisted in Firestore and returned immediately.
     """
     require_group_member(group_id, current_user["id"])
+    if count_group_members(group_id) < 2:
+        raise HTTPException(status_code=409, detail="Location matching needs at least 2 group members")
+
     group_ref(group_id).set({"status": "matching_in_progress", "updated_at": now_iso()}, merge=True)
-    return create_meeting_proposal(group_id)
+    try:
+        return create_meeting_proposal(group_id)
+    except CalendarAvailabilityError as error:
+        group_ref(group_id).set({"status": "no_meeting_planned", "updated_at": now_iso()}, merge=True)
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.get("/groups/{group_id}/proposal", response_model=MeetingProposal)

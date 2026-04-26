@@ -45,6 +45,44 @@ const cafeImage =
 const LAST_GROUP_ID_KEY = 'matchai:lastGroupId'
 const LAST_PROPOSAL_KEY = 'matchai:lastProposal'
 
+function formatMeetingWindow(startsAt: Date, endsAt: Date) {
+  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+    return 'To be confirmed'
+  }
+
+  const date = new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(startsAt)
+  const time = new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  return `${date}, ${time.format(startsAt)}-${time.format(endsAt)}`
+}
+
+function formatGoogleCalendarDate(date: Date) {
+  return date.toISOString().replace(/[-:]|\.\d{3}/g, '')
+}
+
+function googleCalendarUrl(proposal, startsAt: Date, endsAt: Date) {
+  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+    return 'https://calendar.google.com/calendar/u/0/r/eventedit'
+  }
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: proposal.title || proposal.location_name,
+    dates: `${formatGoogleCalendarDate(startsAt)}/${formatGoogleCalendarDate(endsAt)}`,
+    details: [proposal.summary, proposal.rationale].filter(Boolean).join('\n\n'),
+    location: [proposal.location_name, proposal.address].filter(Boolean).join(', '),
+  })
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
+}
+
 function FlowPageShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { clearSession } = useAuthSession()
@@ -683,6 +721,15 @@ export function WaitingForGroupMatchPage() {
 
   const startMatching = async () => {
     const activeGroupId = routeGroupId || groupDetail?.id || window.localStorage.getItem(LAST_GROUP_ID_KEY) || groupId
+    if (!canStartMatching) {
+      setStatusText(
+        hasEnoughMembers
+          ? 'Only the group creator can start matching.'
+          : 'Invite at least one more person before starting location matching.',
+      )
+      return
+    }
+
     setMatchingStarted(true)
     setScheduleBlocked(false)
     setScheduleFinished(false)
@@ -704,6 +751,9 @@ export function WaitingForGroupMatchPage() {
   const isOwner = Boolean(
     groupDetail?.participants?.some((participant) => participant.role === 'owner' && participant.user.id === currentUser?.id),
   )
+  const memberCount = groupDetail?.member_count ?? groupDetail?.participants?.length ?? 0
+  const hasEnoughMembers = memberCount >= 2
+  const canStartMatching = isOwner && hasEnoughMembers
 
   if (isLoadingGroup) {
     return <WaitingGroupSkeleton />
@@ -748,15 +798,24 @@ export function WaitingForGroupMatchPage() {
         ) : (
           <button
             type="button"
-            disabled={!isOwner}
+            disabled={!canStartMatching}
             onClick={startMatching}
             className="mx-auto mt-[42px] flex h-[54px] w-[270px] items-center justify-between rounded-[27px] bg-[var(--color-primary)] pl-9 pr-[7px] font-['Outfit',sans-serif] text-[16px] font-semibold tracking-[-0.03em] text-white transition hover:bg-[var(--color-primary-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+            title={
+              hasEnoughMembers
+                ? isOwner
+                  ? 'Start location matching'
+                  : 'Only the group creator can start matching'
+                : 'Invite at least one more person before starting location matching'
+            }
           >
             Find a meeting ASAP
             <IconButtonCircle className="h-[40px] w-[40px]" iconSize={19} />
           </button>
         )}
-        <p className="mt-3 font-['Outfit',sans-serif] text-[12px] font-semibold text-[#979797]">{statusText}</p>
+        <p className="mt-3 font-['Outfit',sans-serif] text-[12px] font-semibold text-[#979797]">
+          {statusText || (!hasEnoughMembers ? 'Location matching starts once at least 2 people are in this group.' : '')}
+        </p>
 
         <section className="mt-[70px]">
           <h2 className="font-['Outfit',sans-serif] text-[19px] font-bold tracking-[-0.045em] text-[#303030]">Members of {groupDetail.name}</h2>
@@ -852,6 +911,7 @@ export function GroupMatchPage() {
 
   const startsAt = new Date(proposal.starts_at)
   const endsAt = new Date(proposal.ends_at)
+  const meetingWindowLabel = formatMeetingWindow(startsAt, endsAt)
   const openStatusLabel =
     proposal.opens_at ||
     proposal.opening_hours ||
@@ -865,6 +925,7 @@ export function GroupMatchPage() {
   const priceLevel = Number.isInteger(rawPriceLevel) ? Math.max(0, Math.min(4, rawPriceLevel)) : 0
   const mapsUrl = proposal.source_url || '#'
   const websiteUrl = proposal.website_url || ''
+  const calendarUrl = googleCalendarUrl(proposal, startsAt, endsAt)
 
   return (
     <FlowPageShell>
@@ -880,6 +941,10 @@ export function GroupMatchPage() {
 
           <div className="mt-[42px] w-[440px] overflow-hidden rounded-[12px] border border-[#e3e3e3] bg-white font-['Outfit',sans-serif] text-[16px] font-bold text-[#303030]">
             <div className="grid h-[48px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-7">
+              <span>Date</span>
+              <span className="whitespace-nowrap text-right text-[#858585]">{meetingWindowLabel}</span>
+            </div>
+            <div className="grid h-[48px] grid-cols-[1fr_1fr] items-center border-b border-[#e9e9e9] px-7">
               <span>Opened</span>
               <span className="text-right text-[#858585]">{openStatusLabel}</span>
             </div>
@@ -894,14 +959,15 @@ export function GroupMatchPage() {
           </div>
 
           <div className="mt-[56px] flex items-center gap-5">
-            <button
-              type="button"
-              onClick={countMeIn}
-              className="flex h-[60px] w-[230px] items-center justify-between rounded-[30px] bg-[var(--color-primary)] pl-8 pr-[9px] font-['Outfit',sans-serif] text-[19px] font-bold tracking-[-0.03em] text-white transition hover:bg-[var(--color-primary-strong)]"
+            <a
+              href={calendarUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-[60px] w-[230px] items-center justify-between rounded-[30px] bg-[var(--color-primary)] pl-8 pr-[9px] font-['Outfit',sans-serif] text-[18px] font-bold tracking-[-0.03em] text-white transition hover:bg-[var(--color-primary-strong)]"
             >
-              {confirmed ? 'Counted in' : 'Count me in'}
+              Add to Calendar
               <IconButtonCircle className="h-[42px] w-[42px]" iconSize={19} />
-            </button>
+            </a>
             <div className="flex items-center">
               <img src={hannahAvatar} alt="" className="z-30 h-[58px] w-[58px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.08)]" />
               <img src={julianAvatar} alt="" className="z-20 -ml-4 h-[58px] w-[58px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.08)]" />

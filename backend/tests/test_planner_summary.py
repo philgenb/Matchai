@@ -1,7 +1,15 @@
 import unittest
 from unittest.mock import patch
 
-from app.services.planner import _coerce_single_sentence, _fallback_summary, _generate_ai_summary
+from app.services.planner import (
+    CalendarAvailabilityError,
+    _best_candidate_slot,
+    _calendar_connected_member_ids,
+    _coerce_single_sentence,
+    _fallback_summary,
+    _generate_ai_summary,
+    _overlaps,
+)
 from app.schemas import VenueCandidate
 
 
@@ -73,6 +81,74 @@ class PlannerSummaryTests(unittest.TestCase):
         )
         self.assertEqual(summary, "Alex and Sam should hit Canal Social Club for cozy food vibes in Kreuzberg.")
         self.assertIn("location vibe", rationale)
+
+    def test_overlap_handles_google_zulu_timestamps(self) -> None:
+        self.assertTrue(
+            _overlaps(
+                "2026-04-27T18:30:00+00:00",
+                "2026-04-27T20:30:00+00:00",
+                {"start": "2026-04-27T19:00:00Z", "end": "2026-04-27T20:00:00Z"},
+            )
+        )
+        self.assertFalse(
+            _overlaps(
+                "2026-04-27T18:30:00+00:00",
+                "2026-04-27T20:30:00+00:00",
+                {"start": "2026-04-27T20:30:00Z", "end": "2026-04-27T21:00:00Z"},
+            )
+        )
+
+    @patch("app.services.planner.has_calendar_connection")
+    def test_calendar_matching_only_uses_connected_members(self, mocked_has_calendar_connection) -> None:
+        mocked_has_calendar_connection.side_effect = lambda member_id: member_id in {"connected-a", "connected-b"}
+        self.assertEqual(
+            _calendar_connected_member_ids(["connected-a", "offline", "connected-b"]),
+            ["connected-a", "connected-b"],
+        )
+
+    @patch("app.services.planner._candidate_slots")
+    @patch("app.services.planner.get_busy_windows")
+    @patch("app.services.planner.has_calendar_connection")
+    def test_best_candidate_slot_skips_busy_connected_calendars(
+        self,
+        mocked_has_calendar_connection,
+        mocked_get_busy_windows,
+        mocked_candidate_slots,
+    ) -> None:
+        mocked_has_calendar_connection.side_effect = lambda member_id: member_id == "connected"
+        mocked_candidate_slots.return_value = [
+            ("2026-04-27T18:30:00+00:00", "2026-04-27T20:30:00+00:00"),
+            ("2026-04-27T19:30:00+00:00", "2026-04-27T21:30:00+00:00"),
+        ]
+        mocked_get_busy_windows.side_effect = [
+            [{"start": "2026-04-27T19:00:00Z", "end": "2026-04-27T20:00:00Z"}],
+            [],
+        ]
+
+        self.assertEqual(
+            _best_candidate_slot(["connected", "offline"]),
+            ("2026-04-27T19:30:00+00:00", "2026-04-27T21:30:00+00:00"),
+        )
+
+    @patch("app.services.planner._candidate_slots")
+    @patch("app.services.planner.get_busy_windows")
+    @patch("app.services.planner.has_calendar_connection")
+    def test_best_candidate_slot_raises_when_connected_calendars_are_all_busy(
+        self,
+        mocked_has_calendar_connection,
+        mocked_get_busy_windows,
+        mocked_candidate_slots,
+    ) -> None:
+        mocked_has_calendar_connection.return_value = True
+        mocked_candidate_slots.return_value = [
+            ("2026-04-27T18:30:00+00:00", "2026-04-27T20:30:00+00:00"),
+        ]
+        mocked_get_busy_windows.return_value = [
+            {"start": "2026-04-27T18:30:00Z", "end": "2026-04-27T20:30:00Z"},
+        ]
+
+        with self.assertRaises(CalendarAvailabilityError):
+            _best_candidate_slot(["connected"])
 
 
 if __name__ == "__main__":
