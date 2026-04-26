@@ -132,6 +132,46 @@ body.a11y-high-contrast img {
   filter: saturate(0.8) contrast(1.2);
 }
 
+/* Hover-to-read accessibility mode */
+.a11y-hover-target {
+  position: relative;
+  border-radius: 6px;
+  outline: 2px solid rgba(180, 115, 255, 0.55);
+  outline-offset: 3px;
+  transition:
+    outline-color 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.a11y-hover-target-loading {
+  background-color: rgba(180, 115, 255, 0.10);
+  outline-color: rgba(180, 115, 255, 0.7);
+  box-shadow: 0 0 0 4px rgba(180, 115, 255, 0.12);
+}
+
+.a11y-hover-target-active {
+  background-color: rgba(180, 115, 255, 0.18);
+  outline-color: rgba(159, 86, 243, 0.95);
+  box-shadow: 0 0 0 4px rgba(180, 115, 255, 0.22);
+}
+
+body.a11y-high-contrast .a11y-hover-target {
+  outline-color: #ffeb3b !important;
+}
+
+body.a11y-high-contrast .a11y-hover-target-active {
+  background-color: rgba(255, 235, 59, 0.18) !important;
+  outline-color: #ffeb3b !important;
+  box-shadow: 0 0 0 4px rgba(255, 235, 59, 0.25) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a11y-hover-target {
+    transition: none;
+  }
+}
+
 @keyframes matchaiFadeUp {
   from {
     opacity: 0;
