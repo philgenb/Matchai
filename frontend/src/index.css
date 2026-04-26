@@ -63,6 +63,75 @@ body.landing {
   );
 }
 
+html.a11y-high-contrast,
+body.a11y-high-contrast {
+  background: #000 !important;
+}
+
+body.a11y-high-contrast {
+  color: #fff !important;
+}
+
+body.a11y-high-contrast * {
+  border-color: #fff !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body.a11y-high-contrast p,
+body.a11y-high-contrast span,
+body.a11y-high-contrast h1,
+body.a11y-high-contrast h2,
+body.a11y-high-contrast h3,
+body.a11y-high-contrast h4,
+body.a11y-high-contrast h5,
+body.a11y-high-contrast h6,
+body.a11y-high-contrast label,
+body.a11y-high-contrast li,
+body.a11y-high-contrast dt,
+body.a11y-high-contrast dd {
+  color: #fff !important;
+}
+
+body.a11y-high-contrast main,
+body.a11y-high-contrast section,
+body.a11y-high-contrast article,
+body.a11y-high-contrast aside,
+body.a11y-high-contrast nav,
+body.a11y-high-contrast footer,
+body.a11y-high-contrast header,
+body.a11y-high-contrast div,
+body.a11y-high-contrast form {
+  background-color: transparent !important;
+}
+
+body.a11y-high-contrast button,
+body.a11y-high-contrast [role='button'],
+body.a11y-high-contrast input,
+body.a11y-high-contrast textarea,
+body.a11y-high-contrast select {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+body.a11y-high-contrast a {
+  color: #ffeb3b !important;
+  text-decoration: underline !important;
+}
+
+body.a11y-high-contrast button:focus-visible,
+body.a11y-high-contrast a:focus-visible,
+body.a11y-high-contrast input:focus-visible,
+body.a11y-high-contrast select:focus-visible,
+body.a11y-high-contrast textarea:focus-visible {
+  outline: 3px solid #ffeb3b !important;
+  outline-offset: 2px !important;
+}
+
+body.a11y-high-contrast img {
+  filter: saturate(0.8) contrast(1.2);
+}
+
 @keyframes matchaiFadeUp {
   from {
     opacity: 0;

@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import AccessibilityWidget from '../components/accessibility/AccessibilityWidget'
 
 function MainLayout() {
   return (
@@ -6,6 +7,7 @@ function MainLayout() {
       <main>
         <Outlet />
       </main>
+      <AccessibilityWidget />
     </div>
   )
 }
