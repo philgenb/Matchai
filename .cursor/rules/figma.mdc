@@ -1,0 +1,41 @@
+---
+description: Rules for implementing Figma designs with assets
+alwaysApply: true
+---
+
+# Stack
+- React 18 + TypeScript, Tailwind CSS [v3 or v4 — specify]
+- UI primitives in src/components/ui — REUSE, never regenerate
+- Pages in src/pages, shared layouts in src/layouts
+- Icons: lucide-react for generic; custom SVGs in src/assets/icons
+- Images in public/images
+
+# Required Figma MCP flow
+1. Call get_metadata first to see the node tree
+2. Call get_design_context on the specific target node
+3. Call get_screenshot for visual reference
+4. Inventory all assets BEFORE writing code
+5. Extract assets, then write the component
+
+# Asset rules
+- Generic icons (arrow, check, menu) -> lucide-react, do NOT export
+- Brand/custom icons -> src/assets/icons/[kebab-name].svg
+- Illustrations -> src/assets/illustrations/[kebab-name].svg
+- Photos/raster -> public/images/[kebab-name].[ext]
+- Search existing assets before extracting — never duplicate
+- SVG icons use currentColor so Tailwind text-* utilities work
+- <img> always has width, height, alt
+
+# Output rules
+- Use Tailwind tokens, never arbitrary hex values
+- Semantic HTML: button, nav, main, section, header
+- Match Figma auto-layout to flex/grid + gap-*
+- Preserve exact spacing, font sizes, weights, radius
+- Include hover, focus, disabled states even if not in frame
+- Stub click handlers with TODO — never invent logic
+
+# What to avoid
+- Inventing copy or icons not in the design
+- Regenerating existing primitives in src/components/ui
+- Adding dependencies without asking
+- Embedding base64 image data in components

@@ -13,6 +13,11 @@ Thumbs.db
 .env.*
 !.env.example
 
+# Secrets and service accounts
+*service-account*.json
+*firebase-admin*.json
+*firebase-credentials*.json
+
 # Dependencies
 node_modules/
 vendor/
@@ -36,4 +41,3 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
-

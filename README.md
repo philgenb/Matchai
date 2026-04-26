@@ -8,5 +8,16 @@ This repository currently contains the project foundation. It is intended to hol
 
 ## Getting Started
 
-Project-specific setup, development, and deployment instructions will be added as the implementation grows.
+The repository currently includes a simple FastAPI backend in `backend/`.
 
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+Once running, open `http://127.0.0.1:8000/health` to verify the API.
+
+For local API calls during frontend development, use `Authorization: Bearer dev:alice@example.com`.
