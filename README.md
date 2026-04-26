@@ -20,8 +20,6 @@ Matchai is a social scheduling app that helps friend groups find a good time and
 - Backend: FastAPI, Uvicorn, Pydantic Settings, firebase-admin, google-auth-oauthlib, httpx
 - Local development: Node.js/npm, Python venv, Google Cloud CLI
 
-Unused integrations have been removed from this onboarding.
-
 ## Project Structure
 
 ```text
@@ -155,6 +153,8 @@ GOOGLE_PLACES_API_KEY=<google-places-api-key>
 GOOGLE_PLACES_REGION=de
 GOOGLE_PLACES_LANGUAGE_CODE=en
 GEMINI_API_KEY=<gemini-api-key>
+
+GRADIUM_API_KEY=<gradium-api-key>
 ```
 
 ### Backend Env Variables
@@ -176,6 +176,7 @@ GEMINI_API_KEY=<gemini-api-key>
 | `GOOGLE_PLACES_REGION` | Optional | Region bias for Places, for example `de`. |
 | `GOOGLE_PLACES_LANGUAGE_CODE` | Optional | Language for Places responses, for example `en` or `de`. |
 | `GEMINI_API_KEY` | For AI summary | API key for Gemini. Without this key, the backend uses a deterministic fallback summary. |
+| `GRADIUM_API_KEY` | For accessibility TTS | API key for Gradium text to speech. Without this key, `/accessibility/tts` returns `503` instead of audio. |
 
 ## Frontend Env Setup
 
@@ -274,14 +275,17 @@ The backend currently uses `gemini-1.5-flash` through the Generative Language RE
 
 ## Gradium Accessibility Setup
 
-Gradium was used as the partner technology for the accessibility text-to-speech feature. If you enable this feature locally or in a demo environment, make sure that:
+Gradium is used as the partner technology for the accessibility text-to-speech feature. The frontend accessibility widget calls the public backend endpoint `POST /accessibility/tts`; the backend then calls Gradium with the server-side API key.
 
-- Gradium configuration is available in the target environment.
-- Gradium secrets are not committed in the frontend.
-- API keys or tokens are provided through secure runtime configuration or a secret manager.
-- The feature is tested with keyboard navigation and screen reader behavior.
+Add the key to `backend/.env`:
 
-The current repository does not define a dedicated Gradium environment variable in the existing `.env.example` files. If a later Gradium integration needs a key, add it deliberately to the right env template and document it here.
+```bash
+GRADIUM_API_KEY=<gradium-api-key>
+```
+
+Keep the Gradium key backend-only. Do not add it to `frontend/.env.local`, do not prefix it with `VITE_`, and do not commit real secret values. In production, provide it through Google Secret Manager or the runtime secret configuration of the hosting platform.
+
+If `GRADIUM_API_KEY` is missing, the backend intentionally returns `503` from `/accessibility/tts` and the text-to-speech feature will not play audio.
 
 ## Run The Backend Locally
 

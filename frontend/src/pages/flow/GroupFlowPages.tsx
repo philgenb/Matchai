@@ -18,6 +18,7 @@ import matchaiLogo from '../../components/ui/matchai_logo.svg'
 import googleCalendarIcon from '../../assets/icons/google-calendar-icon.svg'
 import googleMapsIcon from '../../assets/icons/google-maps-icon.svg'
 import { HannahPill, JulianPill } from '../../assets/icons/nametags/NamePill'
+import matchParticipantsImage from '../../assets/images/match-participants.png'
 import hannahAvatar from '../../components/ui/hannah_profile_icon.png'
 import julianAvatar from '../../components/ui/julian_profile_icon.png'
 import createGroupSymbol from '../../assets/images/create-a-group-symbol.png'
@@ -972,13 +973,7 @@ export function GroupMatchPage() {
               Add to Calendar
               <IconButtonCircle className="h-[42px] w-[42px]" iconSize={19} />
             </a>
-            <div className="flex items-center">
-              <img src={hannahAvatar} alt="" className="z-30 h-[44px] w-[44px] rounded-full bg-white object-contain p-[3px] shadow-[0_7px_14px_rgba(0,0,0,0.08)]" />
-              <img src={julianAvatar} alt="" className="z-20 -ml-3 h-[44px] w-[44px] rounded-full bg-white object-contain p-[3px] shadow-[0_7px_14px_rgba(0,0,0,0.08)]" />
-              <span className="-ml-3 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white font-['Outfit',sans-serif] text-[13px] font-bold text-[#858585] shadow-[0_7px_14px_rgba(0,0,0,0.08)]">
-                +2
-              </span>
-            </div>
+            <img src={matchParticipantsImage} alt="Two friends and two more participants" className="h-[88px] w-auto shrink-0" />
           </div>
         </div>
 
