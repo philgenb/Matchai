@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     google_places_api_key: str | None = None
     google_places_region: str | None = None
     google_places_language_code: str = "en"
+    gradium_api_key: str | None = None
 
 
 class FirebaseUser(BaseModel):
