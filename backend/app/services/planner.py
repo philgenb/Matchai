@@ -5,10 +5,14 @@ import httpx
 from app.firebase import firestore_client
 from app.repositories import group_members, group_ref, proposal_ref, user_preferences
 from app.schemas import MeetingProposal, VenueCandidate
-from app.services.calendar import get_busy_windows
+from app.services.calendar import get_busy_windows, has_calendar_connection
 from app.services.places import search_place
 from app.settings import settings
 from app.storage import new_id, now_iso
+
+
+class CalendarAvailabilityError(RuntimeError):
+    pass
 
 
 def _candidate_slots() -> list[tuple[str, str]]:
@@ -23,18 +27,37 @@ def _candidate_slots() -> list[tuple[str, str]]:
     return slots
 
 
+def _parse_calendar_datetime(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+
 def _overlaps(slot_start: str, slot_end: str, busy_window: dict[str, str]) -> bool:
     busy_start = busy_window.get("start")
     busy_end = busy_window.get("end")
     if not busy_start or not busy_end:
         return False
-    return slot_start < busy_end and busy_start < slot_end
+    slot_start_at = _parse_calendar_datetime(slot_start)
+    slot_end_at = _parse_calendar_datetime(slot_end)
+    busy_start_at = _parse_calendar_datetime(busy_start)
+    busy_end_at = _parse_calendar_datetime(busy_end)
+    return slot_start_at < busy_end_at and busy_start_at < slot_end_at
+
+
+def _calendar_connected_member_ids(member_ids: list[str]) -> list[str]:
+    return [member_id for member_id in member_ids if has_calendar_connection(member_id)]
 
 
 def _best_candidate_slot(member_ids: list[str]) -> tuple[str, str]:
+    calendar_member_ids = _calendar_connected_member_ids(member_ids)
+    if not calendar_member_ids:
+        return _candidate_slots()[0]
+
     for slot_start, slot_end in _candidate_slots():
         has_conflict = False
-        for member_id in member_ids:
+        for member_id in calendar_member_ids:
             try:
                 busy_windows = get_busy_windows(member_id, slot_start, slot_end)
             except Exception:
@@ -44,7 +67,7 @@ def _best_candidate_slot(member_ids: list[str]) -> tuple[str, str]:
                 break
         if not has_conflict:
             return slot_start, slot_end
-    return _candidate_slots()[0]
+    raise CalendarAvailabilityError("No shared free calendar slot found for connected group members")
 
 
 def _mock_venue(city: str | None, interests: list[str]) -> VenueCandidate:

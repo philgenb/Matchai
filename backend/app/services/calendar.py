@@ -182,6 +182,10 @@ def get_calendar_status(user_id: str) -> dict[str, Any]:
     }
 
 
+def has_calendar_connection(user_id: str) -> bool:
+    return get_calendar_integration(user_id) is not None
+
+
 def get_busy_windows(user_id: str, time_min: str, time_max: str) -> list[dict[str, str]]:
     """Return busy windows from the user's primary Google Calendar."""
     credentials = _credentials_for_user(user_id)
